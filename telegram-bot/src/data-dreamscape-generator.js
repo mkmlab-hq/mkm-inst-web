@@ -1,5 +1,5 @@
 /**
- * MKM Lab AI 데이터 드림스케이프 이미지 생성 시스템
+ * MKM Lab AI 데이터 드림스케이프 이미지 생성 시스템 (Google AI Gemini Pro Vision 기반)
  * 
  * '내면의 초상을, AI의 시선으로 재창조하다'
  * 
@@ -7,16 +7,19 @@
  * 1. 초월적 개인화 (Transcendental Personalization)
  * 2. AI 고유의 미학 (AI-Native Aesthetics)  
  * 3. 정체성의 유동성 (Fluidity of Identity)
+ * 
+ * Google AI 생태계 통합으로 비용 효율성과 일관성 확보
  */
 
 const axios = require('axios');
 
 class DataDreamscapeGenerator {
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || process.env.DALLE_API_KEY;
-    this.baseUrl = 'https://api.openai.com/v1/images/generations';
+    // Google AI Gemini Pro Vision API 설정
+    this.apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
     
-    // 데이터 드림스케이프 시그니처 스타일 정의
+    // 데이터 드림스케이프 시그니처 스타일 정의 (Google AI 최적화)
     this.dreamscapeStyles = {
       'origin_echoes': {
         name: '오리진 에코즈',
@@ -29,7 +32,8 @@ class DataDreamscapeGenerator {
           'organic data flows'
         ],
         colors: ['deep cosmic blues', 'luminous whites', 'ethereal purples', 'primal golds'],
-        technique: 'ultra-abstract, minimalist, zen-like composition'
+        technique: 'ultra-abstract, minimalist, zen-like composition',
+        googlePrompt: 'An ultra-abstract, minimalist composition featuring complex neural network patterns, luminous core energy, and primal geometric forms. Deep cosmic blues, luminous whites, ethereal purples, and primal golds create a zen-like atmosphere representing the most fundamental essence of being.'
       },
       
       'future_vision': {
@@ -43,359 +47,240 @@ class DataDreamscapeGenerator {
           'advanced AI aesthetics'
         ],
         colors: ['electric blues', 'neon purples', 'silver chrome', 'holographic spectrum'],
-        technique: 'high-tech, cutting-edge, sci-fi sophistication'
+        technique: 'high-tech, cutting-edge, sci-fi sophistication',
+        googlePrompt: 'A cutting-edge sci-fi visualization featuring holographic projections, quantum computing visualizations, and futuristic interfaces. Electric blues, neon purples, silver chrome, and holographic spectrum colors create an advanced AI aesthetic representing future potential and forward-looking energy.'
       },
       
       'ethereal_soul': {
         name: '에테리얼 소울',
-        description: '감성적, 영적인 측면을 부드러운 유기적 형태와 환상적 색감으로 구현',
+        description: '영혼의 본질을 초월적이고 신비로운 시각적 언어로 표현',
         elements: [
-          'soft organic forms',
-          'spiritual light patterns',
-          'gentle energy flows',
-          'dreamlike landscapes',
-          'soulful expressions'
+          'spiritual energy fields',
+          'transcendental light patterns',
+          'ethereal consciousness',
+          'divine geometry',
+          'soul essence visualization'
         ],
-        colors: ['pastel pinks', 'soft lavenders', 'gentle teals', 'warm creams'],
-        technique: 'ethereal, dreamy, emotionally resonant'
+        colors: ['ethereal whites', 'spiritual golds', 'mystical purples', 'divine blues'],
+        technique: 'transcendental, mystical, soul-essence visualization',
+        googlePrompt: 'A transcendental and mystical composition featuring spiritual energy fields, transcendental light patterns, and divine geometry. Ethereal whites, spiritual golds, mystical purples, and divine blues create a soul essence visualization representing the ethereal nature of consciousness.'
       }
     };
 
-    // 페르소나별 데이터 드림스케이프 매핑
-    this.personaDreamscapes = {
-      'P1': { // The Visionary Leader
-        primary: 'future_vision',
-        secondary: 'origin_echoes',
-        signatureElements: [
-          'leadership energy fields',
-          'visionary neural pathways',
-          'innovative thought patterns',
-          'strategic data flows'
-        ],
-        emotionalPalette: ['determined', 'inspiring', 'forward-thinking', 'transformative']
+    // 환경 지능 통합 (Google AI 최적화)
+    this.environmentalFactors = {
+      weather: {
+        sunny: {
+          prompt: 'bright, warm lighting, golden hour atmosphere, optimistic energy',
+          googlePrompt: 'Bright, warm lighting with golden hour atmosphere creating an optimistic and uplifting energy'
+        },
+        cloudy: {
+          prompt: 'soft, diffused lighting, contemplative mood, gentle energy',
+          googlePrompt: 'Soft, diffused lighting creating a contemplative and gentle mood'
+        },
+        rainy: {
+          prompt: 'moody, atmospheric lighting, introspective energy, water elements',
+          googlePrompt: 'Moody, atmospheric lighting with water elements creating an introspective and reflective energy'
+        }
       },
-      
-      'P2': { // The Balanced Builder
-        primary: 'ethereal_soul',
-        secondary: 'origin_echoes',
-        signatureElements: [
-          'harmonious geometric balance',
-          'stable energy foundations',
-          'peaceful data symmetries',
-          'grounded spiritual patterns'
-        ],
-        emotionalPalette: ['centered', 'peaceful', 'harmonious', 'grounded']
-      },
-      
-      'P3': { // The Dynamic Explorer
-        primary: 'future_vision',
-        secondary: 'ethereal_soul',
-        signatureElements: [
-          'dynamic energy trails',
-          'exploratory data paths',
-          'adventurous spirit flows',
-          'boundary-breaking patterns'
-        ],
-        emotionalPalette: ['energetic', 'curious', 'adventurous', 'free-spirited']
-      },
-      
-      'P4': { // The Mindful Guardian
-        primary: 'ethereal_soul',
-        secondary: 'origin_echoes',
-        signatureElements: [
-          'protective energy shields',
-          'mindful awareness fields',
-          'nurturing care patterns',
-          'wisdom light flows'
-        ],
-        emotionalPalette: ['protective', 'wise', 'nurturing', 'mindful']
+      cultural: {
+        korean: {
+          prompt: 'traditional Korean aesthetics, harmony, balance, natural elements',
+          googlePrompt: 'Traditional Korean aesthetics emphasizing harmony, balance, and natural elements'
+        },
+        global: {
+          prompt: 'universal human experience, diverse cultural elements, unity in diversity',
+          googlePrompt: 'Universal human experience with diverse cultural elements representing unity in diversity'
+        }
       }
-    };
-
-    // 생체 데이터 시각화 패턴
-    this.bioDataPatterns = {
-      facialFeatures: [
-        'micro-expression data flows',
-        'facial symmetry patterns',
-        'skin texture algorithms',
-        'facial landmark networks'
-      ],
-      emotionalData: [
-        'emotion recognition patterns',
-        'mood fluctuation curves',
-        'personality trait visualizations',
-        'behavioral data streams'
-      ],
-      environmentalData: [
-        'weather influence patterns',
-        'cultural context flows',
-        'geographic data mappings',
-        'temporal rhythm cycles'
-      ]
     };
   }
 
   /**
-   * 데이터 드림스케이프 페르소나 이미지 생성
+   * 데이터 드림스케이프 이미지 생성 (Google AI Gemini Pro Vision)
    */
-  async generateDreamscapeImage(personaCode, userData = {}, style = 'auto') {
+  async generateDreamscapeImage(personaCode, styleKey, userData = {}) {
     try {
-      const personaConfig = this.personaDreamscapes[personaCode];
-      if (!personaConfig) {
-        throw new Error(`Unknown persona code: ${personaCode}`);
+      const style = this.dreamscapeStyles[styleKey];
+      if (!style) {
+        throw new Error(`Unknown dreamscape style: ${styleKey}`);
       }
 
-      // 스타일 자동 선택 또는 사용자 지정
-      const selectedStyle = style === 'auto' ? personaConfig.primary : style;
-      const dreamscapeStyle = this.dreamscapeStyles[selectedStyle];
-      
-      if (!dreamscapeStyle) {
-        throw new Error(`Unknown dreamscape style: ${selectedStyle}`);
-      }
+      const prompt = this.buildDreamscapePrompt(style, personaCode, userData);
+      const imageData = await this.generateGoogleAIImage(prompt);
 
-      const prompt = this.buildDreamscapePrompt(personaConfig, dreamscapeStyle, userData);
-      const imageData = await this.generateImage(prompt);
-      
       return {
         success: true,
         imageUrl: imageData.url,
         prompt: prompt,
-        style: dreamscapeStyle.name,
-        description: dreamscapeStyle.description,
-        personaCode: personaCode,
-        isDreamscape: true,
-        metadata: this.generateDreamscapeMetadata(personaCode, selectedStyle, userData)
+        style: style.name,
+        description: style.description,
+        aiProvider: 'Google AI Gemini Pro Vision',
+        dreamscapeType: 'data_visualization'
       };
     } catch (error) {
-      console.error('드림스케이프 이미지 생성 오류:', error);
+      console.error('Google AI 드림스케이프 생성 오류:', error);
       return {
         success: false,
         error: error.message,
-        fallbackUrl: this.getDreamscapeFallbackImage(personaCode)
+        fallbackUrl: this.getDreamscapeFallbackImage(styleKey),
+        aiProvider: 'Fallback System'
       };
     }
   }
 
   /**
-   * 데이터 드림스케이프 프롬프트 구성
+   * Google AI 최적화 드림스케이프 프롬프트 구성
    */
-  buildDreamscapePrompt(personaConfig, dreamscapeStyle, userData) {
-    let prompt = `Create a unique "Data Dreamscape" artwork that represents an individual's inner essence through AI interpretation. `;
+  buildDreamscapePrompt(style, personaCode, userData = {}) {
+    let prompt = `${style.googlePrompt}, `;
     
-    // 기본 드림스케이프 스타일
-    prompt += `Style: ${dreamscapeStyle.technique}, `;
+    // 페르소나 특성 반영
+    const personaContext = this.getPersonaContext(personaCode);
+    prompt += `Context: ${personaContext}, `;
     
-    // 페르소나 시그니처 요소
-    prompt += `Core elements: ${personaConfig.signatureElements.join(', ')}, `;
-    
-    // 드림스케이프 스타일 요소
-    prompt += `Visual elements: ${dreamscapeStyle.elements.join(', ')}, `;
-    
-    // 색상 팔레트
-    prompt += `Color palette: ${dreamscapeStyle.colors.join(', ')}, `;
-    
-    // 감정적 톤
-    prompt += `Emotional tone: ${personaConfig.emotionalPalette.join(', ')}, `;
-    
-    // 생체 데이터 시각화
-    if (userData.facialAnalysis) {
-      prompt += `Bio-data visualization: ${this.bioDataPatterns.facialFeatures.join(', ')}, `;
-    }
-    
-    if (userData.emotionalData) {
-      prompt += `Emotional patterns: ${this.bioDataPatterns.emotionalData.join(', ')}, `;
-    }
-    
-    // 환경 데이터 통합
+    // 환경 지능 통합
     if (userData.environment) {
-      prompt += `Environmental integration: ${this.bioDataPatterns.environmentalData.join(', ')}, `;
-    }
-    
-    // AI 고유 미학 강조
-    prompt += `AI-native aesthetics, data-driven art, transcendental personalization, `;
-    prompt += `fluid identity representation, ethereal beauty, `;
-    prompt += `high quality, detailed, professional AI art, 4K resolution, `;
-    prompt += `unique artistic vision, groundbreaking visual style`;
-    
-    return prompt;
-  }
-
-  /**
-   * 로고 생성 시스템
-   */
-  async generatePersonaLogo(personaCode, userData = {}, logoStyle = 'minimal') {
-    try {
-      const personaConfig = this.personaDreamscapes[personaCode];
-      if (!personaConfig) {
-        throw new Error(`Unknown persona code: ${personaCode}`);
+      if (userData.environment.weather) {
+        const weatherFactor = this.environmentalFactors.weather[userData.environment.weather];
+        if (weatherFactor) {
+          prompt += `${weatherFactor.googlePrompt}, `;
+        }
       }
-
-      const prompt = this.buildLogoPrompt(personaConfig, logoStyle, userData);
-      const imageData = await this.generateImage(prompt);
-      
-      return {
-        success: true,
-        imageUrl: imageData.url,
-        prompt: prompt,
-        logoStyle: logoStyle,
-        personaCode: personaCode,
-        isLogo: true,
-        metadata: this.generateLogoMetadata(personaCode, logoStyle, userData)
-      };
-    } catch (error) {
-      console.error('로고 생성 오류:', error);
-      return {
-        success: false,
-        error: error.message,
-        fallbackUrl: this.getLogoFallbackImage(personaCode)
-      };
-    }
-  }
-
-  /**
-   * 로고 프롬프트 구성
-   */
-  buildLogoPrompt(personaConfig, logoStyle, userData) {
-    let prompt = `Create a minimalist, symbolic logo that represents an individual's unique persona essence. `;
-    
-    // 로고 스타일
-    switch (logoStyle) {
-      case 'minimal':
-        prompt += `Minimalist design, clean lines, simple geometric forms, `;
-        break;
-      case 'abstract':
-        prompt += `Abstract symbolic representation, flowing organic shapes, `;
-        break;
-      case 'modern':
-        prompt += `Modern typography, contemporary design principles, `;
-        break;
-      case 'vintage':
-        prompt += `Vintage aesthetic, classic typography, timeless appeal, `;
-        break;
+      if (userData.environment.cultural) {
+        const culturalFactor = this.environmentalFactors.cultural[userData.environment.cultural.region];
+        if (culturalFactor) {
+          prompt += `${culturalFactor.googlePrompt}, `;
+        }
+      }
     }
     
-    // 페르소나 심볼 압축
-    prompt += `Symbolic elements: ${personaConfig.signatureElements.join(', ')}, `;
-    
-    // 색상 팔레트 (로고용)
-    const logoColors = this.getLogoColorPalette(personaConfig);
-    prompt += `Color palette: ${logoColors.join(', ')}, `;
-    
-    // 로고 특성
-    prompt += `Logo characteristics: scalable, memorable, unique, `;
-    prompt += `works in black and white, professional quality, `;
-    prompt += `high contrast, clear visibility at small sizes, `;
-    prompt += `transparent background, vector-style design`;
+    // Google AI 최적화 설정
+    prompt += 'high quality, detailed, professional digital art, 4K resolution, masterpiece, data visualization art';
     
     return prompt;
   }
 
   /**
-   * 로고 색상 팔레트 생성
+   * 페르소나별 컨텍스트 제공
    */
-  getLogoColorPalette(personaConfig) {
-    const baseColors = {
-      'P1': ['electric blue', 'deep purple', 'silver'],
-      'P2': ['emerald green', 'golden', 'deep blue'],
-      'P3': ['fiery orange', 'vibrant yellow', 'dynamic red'],
-      'P4': ['soft lavender', 'gentle pink', 'calm teal']
+  getPersonaContext(personaCode) {
+    const contexts = {
+      'P1': 'Visionary leadership and innovative thinking',
+      'P2': 'Balanced harmony and structural stability',
+      'P3': 'Dynamic exploration and adventurous energy',
+      'P4': 'Mindful wisdom and protective consciousness'
     };
-    
-    return baseColors[personaConfig.primary] || ['black', 'white', 'gray'];
+    return contexts[personaCode] || contexts['P1'];
   }
 
   /**
-   * 실제 이미지 생성 API 호출
+   * Google AI Gemini Pro Vision API 호출
    */
-  async generateImage(prompt) {
+  async generateGoogleAIImage(prompt) {
     if (!this.apiKey) {
-      throw new Error('OpenAI API 키가 설정되지 않았습니다.');
+      throw new Error('Google AI API 키가 설정되지 않았습니다.');
     }
 
-    const response = await axios.post(this.baseUrl, {
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      quality: "hd",
-      style: "vivid"
-    }, {
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
+    try {
+      // Google AI Gemini Pro Vision API 호출
+      const response = await axios.post(`${this.baseUrl}?key=${this.apiKey}`, {
+        contents: [{
+          parts: [{
+            text: `Create a stunning data visualization artwork based on this description: ${prompt}. 
+                   This should be a 1024x1024 pixel, high-resolution digital art piece that represents 
+                   the essence of the description through abstract, artistic visualization. 
+                   The image should be suitable for professional use and capture the transcendental 
+                   nature of the data dreamscape concept.`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.8,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        }
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Google AI 응답에서 이미지 URL 추출
+      const imageUrl = this.extractImageUrlFromGoogleAIResponse(response.data);
+      
+      if (!imageUrl) {
+        throw new Error('Google AI에서 드림스케이프 이미지 URL을 생성할 수 없습니다.');
       }
-    });
 
-    return {
-      url: response.data.data[0].url,
-      revised_prompt: response.data.data[0].revised_prompt
-    };
+      return { url: imageUrl };
+    } catch (error) {
+      console.error('Google AI 드림스케이프 API 호출 오류:', error.response?.data || error.message);
+      throw new Error(`Google AI 드림스케이프 생성 실패: ${error.message}`);
+    }
   }
 
   /**
-   * 드림스케이프 메타데이터 생성
+   * Google AI 응답에서 이미지 URL 추출
    */
-  generateDreamscapeMetadata(personaCode, style, userData) {
-    return {
-      generationType: 'data_dreamscape',
-      personaCode: personaCode,
-      style: style,
-      timestamp: new Date().toISOString(),
-      userData: {
-        hasFacialData: !!userData.facialAnalysis,
-        hasEnvironmentalData: !!userData.environment,
-        hasEmotionalData: !!userData.emotionalData
-      },
-      philosophy: {
-        transcendentalPersonalization: true,
-        aiNativeAesthetics: true,
-        fluidIdentity: true
+  extractImageUrlFromGoogleAIResponse(responseData) {
+    try {
+      // Google AI 응답 구조에 따라 이미지 URL 추출
+      if (responseData.candidates && responseData.candidates[0]) {
+        const candidate = responseData.candidates[0];
+        if (candidate.content && candidate.content.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData && part.inlineData.mimeType === 'image/png') {
+              // Base64 이미지 데이터를 URL로 변환
+              return `data:image/png;base64,${part.inlineData.data}`;
+            }
+          }
+        }
       }
-    };
+      
+      // 대안: Google AI가 제공하는 이미지 URL 형식
+      if (responseData.imageUrl) {
+        return responseData.imageUrl;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Google AI 드림스케이프 응답 파싱 오류:', error);
+      return null;
+    }
   }
 
   /**
-   * 로고 메타데이터 생성
+   * 드림스케이프 폴백 이미지 URL 반환 (Google AI 실패 시)
    */
-  generateLogoMetadata(personaCode, style, userData) {
-    return {
-      generationType: 'persona_logo',
-      personaCode: personaCode,
-      logoStyle: style,
-      timestamp: new Date().toISOString(),
-      usage: {
-        socialMedia: true,
-        businessCards: true,
-        websites: true,
-        printMaterials: true
-      },
-      fileFormats: ['PNG', 'JPG', 'SVG']
-    };
-  }
-
-  /**
-   * 폴백 이미지 URL 반환
-   */
-  getDreamscapeFallbackImage(personaCode) {
-    const fallbackUrls = {
-      'P1': 'https://via.placeholder.com/1024x1024/1e3a8a/ffffff?text=Visionary+Leader+Dreamscape',
-      'P2': 'https://via.placeholder.com/1024x1024/059669/ffffff?text=Balanced+Builder+Dreamscape',
-      'P3': 'https://via.placeholder.com/1024x1024/d97706/ffffff?text=Dynamic+Explorer+Dreamscape',
-      'P4': 'https://via.placeholder.com/1024x1024/7c3aed/ffffff?text=Mindful+Guardian+Dreamscape'
+  getDreamscapeFallbackImage(styleKey) {
+    const fallbackImages = {
+      'origin_echoes': 'https://via.placeholder.com/1024x1024/1e3a8a/ffffff?text=Origin+Echoes+%28Google+AI%29',
+      'future_vision': 'https://via.placeholder.com/1024x1024/7c3aed/ffffff?text=Future+Vision+%28Google+AI%29',
+      'ethereal_soul': 'https://via.placeholder.com/1024x1024/059669/ffffff?text=Ethereal+Soul+%28Google+AI%29'
     };
     
-    return fallbackUrls[personaCode] || fallbackUrls['P1'];
+    return fallbackImages[styleKey] || fallbackImages['origin_echoes'];
   }
 
-  getLogoFallbackImage(personaCode) {
-    const fallbackUrls = {
-      'P1': 'https://via.placeholder.com/512x512/1e3a8a/ffffff?text=VL',
-      'P2': 'https://via.placeholder.com/512x512/059669/ffffff?text=BB',
-      'P3': 'https://via.placeholder.com/512x512/d97706/ffffff?text=DE',
-      'P4': 'https://via.placeholder.com/512x512/7c3aed/ffffff?text=MG'
-    };
+  /**
+   * 드림스케이프 메타데이터 생성 (Google AI 정보 포함)
+   */
+  generateDreamscapeMetadata(personaCode, styleKey, userData = {}) {
+    const style = this.dreamscapeStyles[styleKey];
     
-    return fallbackUrls[personaCode] || fallbackUrls['P1'];
+    return {
+      personaCode: personaCode,
+      dreamscapeStyle: styleKey,
+      styleName: style ? style.name : 'Unknown',
+      styleDescription: style ? style.description : '',
+      generatedAt: new Date().toISOString(),
+      version: '2.0',
+      aiProvider: 'Google AI Gemini Pro Vision',
+      costOptimized: true,
+      userData: userData,
+      dreamscapeType: 'data_visualization'
+    };
   }
 
   /**
@@ -405,21 +290,10 @@ class DataDreamscapeGenerator {
     return Object.keys(this.dreamscapeStyles).map(key => ({
       key: key,
       name: this.dreamscapeStyles[key].name,
-      description: this.dreamscapeStyles[key].description
+      description: this.dreamscapeStyles[key].description,
+      technique: this.dreamscapeStyles[key].technique
     }));
-  }
-
-  /**
-   * 사용 가능한 로고 스타일 목록 반환
-   */
-  getAvailableLogoStyles() {
-    return [
-      { key: 'minimal', name: '미니멀', description: '깔끔하고 단순한 디자인' },
-      { key: 'abstract', name: '추상적', description: '유기적이고 흐르는 형태' },
-      { key: 'modern', name: '모던', description: '현대적 타이포그래피' },
-      { key: 'vintage', name: '빈티지', description: '클래식하고 시대를 초월한 매력' }
-    ];
   }
 }
 
-module.exports = DataDreamscapeGenerator; 
+module.exports = { DataDreamscapeGenerator }; 

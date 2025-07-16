@@ -6,11 +6,20 @@ const { MessageHandler } = require('./message-handler');
 
 // 환경 변수 확인
 const token = process.env.TELEGRAM_BOT_TOKEN;
+const googleAIKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const port = process.env.PORT || 8080;
 
 console.log('🔧 환경 변수 확인:');
 console.log(`   PORT: ${port}`);
 console.log(`   TELEGRAM_BOT_TOKEN: ${token ? '설정됨' : '설정되지 않음'}`);
+console.log(`   GOOGLE_AI_API_KEY: ${googleAIKey ? '설정됨' : '설정되지 않음'}`);
+
+// Google AI API 키 경고
+if (!googleAIKey) {
+  console.warn('⚠️  GOOGLE_AI_API_KEY가 설정되지 않았습니다.');
+  console.warn('📝 이미지 생성 기능이 폴백 모드로 작동합니다.');
+  console.warn('🔗 Google AI 설정 가이드: docs/API_SETUP_GUIDE.md');
+}
 
 if (!token) {
   console.error('❌ TELEGRAM_BOT_TOKEN이 설정되지 않았습니다.');
@@ -24,6 +33,7 @@ if (!token) {
       status: 'running',
       message: 'HTTP 서버는 실행 중이지만 텔레그램 봇 토큰이 설정되지 않았습니다.',
       service: 'mkm-telegram-bot',
+      aiProvider: 'Google AI Gemini Pro Vision',
       timestamp: new Date().toISOString()
     }));
   });
@@ -61,7 +71,9 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       status: 'healthy', 
-      service: 'mkm-telegram-bot',
+      service: 'persona-diary-bot',
+      aiProvider: 'Google AI Gemini Pro Vision',
+      imageGeneration: googleAIKey ? 'enabled' : 'fallback',
       timestamp: new Date().toISOString()
     }));
     return;
@@ -71,11 +83,48 @@ const server = http.createServer((req, res) => {
   if (req.url === '/' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
-      message: 'MKM Lab Telegram Bot is running!',
-      service: 'mkm-telegram-bot',
-      version: '1.0.0',
+      message: '페르소나 다이어리 텔레그램 봇이 실행 중입니다!',
+      service: 'persona-diary-bot',
+      version: '2.0.0',
+      aiProvider: 'Google AI Gemini Pro Vision',
+      imageGeneration: googleAIKey ? 'enabled' : 'fallback',
       timestamp: new Date().toISOString()
     }));
+    return;
+  }
+
+  // 분석 결과 수신 엔드포인트
+  if (req.url === '/send-analysis-result' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+        const { user_id, analysis_result } = data;
+        
+        console.log(`📊 분석 결과 수신: 사용자 ${user_id}`);
+        
+        // 텔레그램으로 결과 전송
+        await messageHandler.sendAnalysisResultToUser(user_id, analysis_result);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: true,
+          message: '분석 결과가 성공적으로 전송되었습니다.',
+          aiProvider: 'Google AI Gemini Pro Vision'
+        }));
+      } catch (error) {
+        console.error('❌ 분석 결과 처리 오류:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false,
+          error: '분석 결과 처리 중 오류가 발생했습니다.'
+        }));
+      }
+    });
     return;
   }
 
@@ -90,7 +139,8 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🔗 헬스체크: http://localhost:${port}/health`);
 });
 
-console.log('🤖 MKM Lab 텔레그램 봇이 시작되었습니다!');
+console.log('🤖 페르소나 다이어리 텔레그램 봇이 시작되었습니다!');
+console.log('🎨 AI 이미지 생성: Google AI Gemini Pro Vision');
 console.log('📱 봇을 찾아서 /start 명령어를 입력해보세요.');
 
 // 에러 핸들링
@@ -117,6 +167,40 @@ bot.on('message', async (msg) => {
     } catch (sendError) {
       console.error('❌ 에러 메시지 전송 실패:', sendError);
     }
+  }
+});
+
+// 콜백 쿼리 핸들링 (인라인 버튼 클릭)
+bot.on('callback_query', async (callbackQuery) => {
+  try {
+    const chatId = callbackQuery.message.chat.id;
+    const data = callbackQuery.data;
+
+    console.log(`🔘 콜백 쿼리 수신: ${data}`);
+
+    switch (data) {
+      case 'telegram_analysis':
+        await messageHandler.showTelegramAnalysisOptions(chatId);
+        break;
+      
+      // 원소 기반 능동적 AI 제안 처리
+      default:
+        if (data.startsWith('proactive_')) {
+          await messageHandler.handleProactiveSuggestion(chatId, data);
+        } else {
+          await bot.answerCallbackQuery(callbackQuery.id, {
+            text: '알 수 없는 옵션입니다.'
+          });
+        }
+    }
+
+    // 콜백 쿼리 응답
+    await bot.answerCallbackQuery(callbackQuery.id);
+  } catch (error) {
+    console.error('❌ 콜백 쿼리 처리 에러:', error);
+    await bot.answerCallbackQuery(callbackQuery.id, {
+      text: '오류가 발생했습니다.'
+    });
   }
 });
 

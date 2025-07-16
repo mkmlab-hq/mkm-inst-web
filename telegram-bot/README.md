@@ -1,4 +1,6 @@
-# MKM Lab AI 페르소나 봇
+# 페르소나 다이어리 텔레그램 봇
+
+*Your Hyper-Personalized AI Health Advisor*
 
 🎭 **"내면의 초상을, AI의 시선으로 재창조하다"**
 
@@ -7,6 +9,12 @@
 **핵심 철학**: 최소한의 기능으로 최대한의 임팩트를 주는 완벽한 사용자 경험
 
 ### ✅ MVP 1차 배포 기능
+
+#### 📹 **15초 영상 기반 rPPG 분석**
+- **과학적 생체 신호**: rPPG 기술로 심박수, 혈압 추정
+- **실시간 분석**: 15초 영상으로 즉시 분석
+- **고정확도**: 개인별 맞춤 분석
+- **AI 어드바이저**: RAG 기술로 맞춤형 건강 상담
 
 #### 🔮 **데이터 드림스케이프 이미지 생성**
 - **AI 고유 미학**: 데이터와 알고리즘의 언어에서만 나올 수 있는 고유한 시각적 스타일
@@ -25,8 +33,8 @@
 - **실용적 가치**: 일상에 바로 적용 가능한 조언
 
 #### 📱 **직관적 사용자 경험**
-- **간단한 명령어**: `/dreamscape`, `/logo`, `/help`
-- **즉시 체험**: 사진 전송 후 바로 결과 확인
+- **간단한 명령어**: `/analyze`, `/dreamscape`, `/logo`, `/help`
+- **즉시 체험**: 영상/사진 전송 후 바로 결과 확인
 - **안정적 시스템**: 99.5% 이상 가동률
 
 ### ❌ 초기 배포에서 제외
@@ -37,11 +45,12 @@
 
 ## 🚀 빠른 시작 (5분 설정)
 
-### 1. API 키 설정
+### 1. 환경 변수 설정
 ```bash
 # .env 파일 생성
-OPENAI_API_KEY=sk-your-openai-api-key-here
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
+PERSONA_DIARY_API_URL=http://localhost:8000
+OPENAI_API_KEY=sk-your-openai-api-key-here
 ENABLE_REAL_API_CALLS=true
 ```
 
@@ -77,16 +86,18 @@ npm start
 ### 🎯 핵심 명령어
 - `/start` - 봇 시작 및 환영 메시지
 - `/help` - 도움말 및 사용법 안내
+- `/analyze` - 페르소나 분석 시작
 - `/dreamscape` - 🔮 데이터 드림스케이프 이미지 생성
 - `/logo` - 🎨 페르소나 로고 생성
 - `/styles` - 사용 가능한 스타일 목록
 
 ### 🚀 빠른 체험 방법
 1. **봇 시작**: `/start` 명령어로 봇 활성화
-2. **사진 전송**: 본인의 사진을 봇에게 전송
-3. **이미지 생성**: `/dreamscape` 명령어로 AI 예술 생성
-4. **로고 생성**: `/logo` 명령어로 개인 로고 생성
-5. **결과 확인**: AI가 생성한 당신만의 작품 확인
+2. **영상 분석** (추천): 15초 영상을 보내면 rPPG 생체 신호 분석
+3. **사진 분석**: 얼굴 사진을 보내면 AI 특징 분석
+4. **AI 상담**: "상담하기", "질문하기" 등으로 AI 어드바이저와 상담
+5. **이미지 생성**: `/dreamscape` 명령어로 AI 예술 생성
+6. **로고 생성**: `/logo` 명령어로 개인 로고 생성
 
 ### 🌤️ 환경 지능 활용
 - **위치 공유**: GPS 위치로 실시간 날씨 확인
@@ -170,9 +181,13 @@ npm start
 
 - **Node.js** - 런타임 환경
 - **node-telegram-bot-api** - 텔레그램 봇 API
+- **FastAPI** - 페르소나 다이어리 API 서버
+- **rPPG** - 원격 광혈량맥파 기술
+- **RAG** - 검색 증강 생성 (AI 어드바이저)
 - **OpenWeatherMap API** - 날씨 데이터
 - **OpenAI DALL-E 3** - AI 이미지 생성
 - **Axios** - HTTP 클라이언트
+- **Form-data** - 파일 업로드 처리
 - **Dotenv** - 환경 변수 관리
 
 ## 📁 프로젝트 구조
@@ -183,6 +198,7 @@ telegram-bot/
 │   ├── index.js                    # 메인 진입점
 │   ├── persona-analyzer.js         # 페르소나 분석기
 │   ├── message-handler.js          # 메시지 핸들러
+│   ├── persona-diary-api.js        # 페르소나 다이어리 API 클라이언트
 │   ├── weather-service.js          # 날씨 서비스
 │   ├── data-dreamscape-generator.js # 데이터 드림스케이프 생성기
 │   ├── image-generator.js          # 기본 이미지 생성기
@@ -197,6 +213,8 @@ telegram-bot/
 ## 🚀 로드맵
 
 ### Phase 1: MVP 런칭 (현재) ✅
+- [x] **15초 영상 rPPG 분석** 시스템 구현
+- [x] **AI 어드바이저** (RAG 기반) 구현
 - [x] **데이터 드림스케이프** 시스템 구현
 - [x] **페르소나 로고 생성** 기능
 - [x] **환경 지능** 기반 추천
@@ -233,8 +251,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Email**: contact@mkmlab.com
 - **Website**: https://mkmlab.com
-- **Telegram**: @mkmlab_bot
+- **Telegram**: @persona_diary_bot
 
 ---
 
-**MKM Lab** - AI 기반 초개인화 건강 솔루션 🚀 
+**페르소나 다이어리** - Your Hyper-Personalized AI Health Advisor 🚀 

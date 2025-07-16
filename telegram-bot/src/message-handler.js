@@ -5,6 +5,7 @@ const { LimitedEditionEvents } = require('./limited-edition-events');
 const { ImageGenerator } = require('./image-generator');
 const DataDreamscapeGenerator = require('./data-dreamscape-generator');
 const { PersonaDiary } = require('./persona-diary');
+const { PersonaDiaryAPI } = require('./persona-diary-api');
 
 class MessageHandler {
   constructor(bot, personaAnalyzer) {
@@ -18,6 +19,7 @@ class MessageHandler {
     this.imageGenerator = new ImageGenerator(); // AI 이미지 생성 시스템
     this.dreamscapeGenerator = new DataDreamscapeGenerator(); // 데이터 드림스케이프 생성 시스템
     this.personaDiary = new PersonaDiary(); // 페르소나 다이어리 시스템
+    this.personaDiaryAPI = new PersonaDiaryAPI(); // 페르소나 다이어리 API 클라이언트
   }
 
   async handleMessage(msg) {
@@ -36,6 +38,12 @@ class MessageHandler {
     // 음성 메시지 처리 (15초 음성 촬영)
     if (msg.voice || msg.audio) {
       await this.handleVoiceMessage(msg);
+      return;
+    }
+
+    // 영상 메시지 처리 (15초 영상 촬영)
+    if (msg.video) {
+      await this.handleVideoMessage(msg);
       return;
     }
 
@@ -179,18 +187,21 @@ class MessageHandler {
 
       // 종합 페르소나 분석
       const result = this.personaAnalyzer.analyzePersona(facialData, null, envData);
-      const formatted = this.personaAnalyzer.formatPersonaResult(result);
       
-      await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
+      // 원소 기반 페르소나 생성
+      const elementalPersona = this.getElementalPersona(result.scores);
       
-      // 기질별 맞춤 조언 추가
-      const dispositionAdvice = this.personaAnalyzer.getDispositionBasedAdvice(result.scores);
-      if (dispositionAdvice) {
-        await this.bot.sendMessage(chatId, 
-          `💡 *기질별 맞춤 조언*\n\n${dispositionAdvice}`,
-          { parse_mode: 'Markdown' }
-        );
-      }
+      // 새로운 원소 기반 결과 메시지
+      const elementalResult = `🌟 *${elementalPersona.element} ${elementalPersona.name}의 지혜*\n\n${elementalPersona.description}\n\n💫 *${elementalPersona.trait}*\n\n오늘 당신의 신체가 선택한 원소는 ${elementalPersona.element}입니다.`;
+      
+      await this.bot.sendMessage(chatId, elementalResult, { parse_mode: 'Markdown' });
+      
+      // 능동적 AI 동반자 메시지
+      await this.sendProactiveAIAdvice(chatId, elementalPersona);
+      
+      // 지식의 갈증 유발 질문
+      const curiosityQuestion = this.getCuriosityQuestion(elementalPersona);
+      await this.bot.sendMessage(chatId, curiosityQuestion, { parse_mode: 'Markdown' });
       
       // 사용자 상태 업데이트
       const previousResult = userState.lastPersonaResult;
@@ -311,6 +322,153 @@ class MessageHandler {
     return advice.join('\n');
   }
 
+  async handleVideoMessage(msg) {
+    const chatId = msg.chat.id;
+    const userState = this.userStates.get(chatId) || {};
+    
+    // 영상 메시지 정보 확인
+    const videoInfo = msg.video;
+    const duration = videoInfo.duration || 0;
+    const fileSize = videoInfo.file_size || 0;
+    
+    await this.bot.sendMessage(chatId, 
+      `📹 영상을 받았습니다! (${duration}초, ${Math.round(fileSize / 1024 / 1024 * 100) / 100}MB)\n얼굴 분석을 시작합니다...`
+    );
+
+    try {
+      // API 서버 상태 확인
+      const healthCheck = await this.personaDiaryAPI.checkHealth();
+      if (!healthCheck.success) {
+        await this.bot.sendMessage(chatId, 
+          '😔 분석 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'
+        );
+        return;
+      }
+
+      // 영상 파일 검증
+      const validation = this.personaDiaryAPI.validateVideoFile({
+        size: fileSize,
+        mime_type: videoInfo.mime_type || 'video/mp4'
+      });
+
+      if (!validation.valid) {
+        await this.bot.sendMessage(chatId, validation.error);
+        return;
+      }
+
+      // 영상 파일 다운로드
+      const file = await this.bot.getFile(videoInfo.file_id);
+      const videoBuffer = await this.downloadFile(file.file_path);
+      
+      // 페르소나 다이어리 API로 얼굴 분석 요청
+      const analysisResult = await this.personaDiaryAPI.analyzeFace(
+        videoBuffer, 
+        `video_${chatId}_${Date.now()}.mp4`
+      );
+
+      if (!analysisResult.success) {
+        await this.bot.sendMessage(chatId, 
+          `😔 분석 중 오류가 발생했습니다: ${analysisResult.error}`
+        );
+        return;
+      }
+
+      // 분석 결과를 텔레그램 메시지로 포맷팅
+      const formattedMessage = this.personaDiaryAPI.formatAnalysisResult(analysisResult);
+      
+      await this.bot.sendMessage(chatId, formattedMessage, { parse_mode: 'Markdown' });
+      
+      // 사용자 상태 업데이트
+      const result = analysisResult.data.data.result;
+      userState.currentPersona = result.persona_analysis.persona.code;
+      userState.lastPersonaResult = result;
+      userState.lastAnalysis = new Date();
+      userState.lastAnalysisType = 'video';
+      userState.lastVitalSigns = result.vital_signs;
+      this.userStates.set(chatId, userState);
+
+      // AI 어드바이저 추천 메시지
+      await this.bot.sendMessage(chatId, 
+        '🤖 더 자세한 건강 상담이 필요하시면 "상담하기" 또는 "질문하기"라고 말씀해주세요!'
+      );
+
+    } catch (error) {
+      console.error('영상 처리 오류:', error);
+      await this.bot.sendMessage(chatId, 
+        '😔 영상 처리 중 오류가 발생했습니다. 다시 시도해주세요.'
+      );
+    }
+  }
+
+  async downloadFile(filePath) {
+    const https = require('https');
+    const http = require('http');
+    
+    return new Promise((resolve, reject) => {
+      const protocol = filePath.startsWith('https') ? https : http;
+      
+      protocol.get(filePath, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`));
+          return;
+        }
+
+        const chunks = [];
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(chunks)));
+        response.on('error', reject);
+      }).on('error', reject);
+    });
+  }
+
+  async handleAdvisorQuestion(chatId, question, userState) {
+    await this.bot.sendMessage(chatId, 
+      '🤖 AI 어드바이저가 당신의 질문을 분석하고 있습니다...'
+    );
+
+    try {
+      // 페르소나 데이터 준비
+      const personaData = userState.lastPersonaResult ? {
+        code: userState.lastPersonaResult.persona_analysis.persona.code,
+        name: userState.lastPersonaResult.persona_analysis.persona.name,
+        characteristics: userState.lastPersonaResult.persona_analysis.persona.characteristics
+      } : null;
+
+      // 생체 신호 데이터 준비
+      const vitalSigns = userState.lastVitalSigns || null;
+
+      // AI 어드바이저에게 질문
+      const advisorResult = await this.personaDiaryAPI.askAdvisor(
+        question, 
+        personaData, 
+        vitalSigns
+      );
+
+      if (!advisorResult.success) {
+        await this.bot.sendMessage(chatId, 
+          `😔 AI 어드바이저 응답 중 오류가 발생했습니다: ${advisorResult.error}`
+        );
+        return;
+      }
+
+      // 응답을 텔레그램 메시지로 포맷팅
+      const formattedMessage = this.personaDiaryAPI.formatAdvisorResponse(advisorResult);
+      
+      await this.bot.sendMessage(chatId, formattedMessage, { parse_mode: 'Markdown' });
+
+      // 추가 질문 안내
+      await this.bot.sendMessage(chatId, 
+        '💡 더 궁금한 점이 있으시면 언제든 질문해주세요!'
+      );
+
+    } catch (error) {
+      console.error('AI 어드바이저 질문 처리 오류:', error);
+      await this.bot.sendMessage(chatId, 
+        '😔 AI 어드바이저 응답 중 오류가 발생했습니다. 다시 시도해주세요.'
+      );
+    }
+  }
+
   async handleLocation(msg) {
     const chatId = msg.chat.id;
     const location = msg.location;
@@ -365,6 +523,15 @@ class MessageHandler {
 
     if (hasWeatherKeyword) {
       await this.handleWeatherQuery(chatId, text);
+      return;
+    }
+
+    // AI 어드바이저 질문 키워드
+    const advisorKeywords = ['상담', '질문', '조언', '도움', '어떻게', '왜', '무엇', '어떤'];
+    const hasAdvisorKeyword = advisorKeywords.some(keyword => text.includes(keyword));
+
+    if (hasAdvisorKeyword && userState.currentPersona) {
+      await this.handleAdvisorQuestion(chatId, text, userState);
       return;
     }
 
@@ -514,33 +681,32 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendWelcomeMessage(chatId) {
-    const welcomeText = `🎉 *Persona Diary에 오신 것을 환영합니다!*
+    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!*
+
+*Your Hyper-Personalized AI Health Advisor*
 
 당신만을 위한 **초개인화 건강 솔루션**을 제공하는 AI 페르소나 분석 봇입니다.
 
-*핵심 가치:*
+*🌟 핵심 가치:*
 • 🎯 **초개인화** - 당신만의 고유한 건강 페르소나
-• 🌟 **트렌디** - AI 기반 최신 건강 분석 기술
-• 🎨 **크리에이티브** - 개인화된 건강 솔루션
-• 🌍 **통합적** - 날씨, 문화, 경제, 정치까지 고려
+• 🔬 **과학적** - rPPG 기술 기반 생체 신호 분석
+• 🤖 **AI 기반** - RAG 기술로 맞춤형 건강 상담
+• 🌍 **통합적** - 날씨, 환경, 개인 데이터 융합
 
-*주요 기능:*
-• 🎯 AI 페르소나 분석
-• 📸 얼굴 분석 (AI 기반 특징 분석)
-• 💓 생체 정보 분석 (혈압, 맥박 등)
-• 💬 대화 기반 분석 (텍스트 메시지)
-• 🌤️ 날씨 기반 맞춤 추천
-• 🌍 환경 종합 분석
-• 💡 맞춤형 건강 솔루션
-• 📖 페르소나 다이어리
-• 🎨 AI 이미지 생성
+*🎭 분석 방법:*
+• 📹 **영상 분석** (추천) - 15초 영상으로 rPPG 생체 신호 분석
+• 📸 **사진 분석** - 얼굴 사진으로 AI 특징 분석
+• 🎤 **음성 분석** - 음성 메시지로 패턴 분석
+• 💬 **텍스트 분석** - 건강 관련 메시지로 분석
 
-*사용법:*
+*🤖 AI 어드바이저:*
+분석 후 "상담하기", "질문하기" 등으로 AI 어드바이저와 상담하여 맞춤 솔루션을 받을 수 있습니다.
+
+*💡 시작하기:*
+• 📹 15초 영상을 보내면 가장 정확한 분석을 받을 수 있습니다
 • 📸 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다
-• 💓 생체 정보(혈압, 맥박 등)를 메시지로 보내면 종합 분석을 합니다
 • 💬 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다
 • 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다
-• /analyze 명령어로 분석을 시작할 수 있습니다
 
 지금 바로 당신만의 특별한 건강 여정을 시작해보세요! ✨`;
 
@@ -548,9 +714,18 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendHelpMessage(chatId) {
-    const helpText = `📚 *도움말*
+    const helpText = `📚 *페르소나 다이어리 도움말*
 
-*명령어 목록:*
+*🎭 분석 방법:*
+📹 **영상 분석** (추천) - 15초 영상을 보내면 rPPG 기술로 생체 신호 분석
+📸 **사진 분석** - 얼굴 사진을 보내면 AI가 특징 분석
+🎤 **음성 분석** - 음성 메시지를 보내면 음성 패턴 분석
+💬 **텍스트 분석** - 건강 관련 메시지를 보내면 텍스트 기반 분석
+
+*🤖 AI 어드바이저:*
+분석 후 "상담하기", "질문하기", "조언" 등의 키워드로 AI 어드바이저와 상담 가능
+
+*📋 명령어 목록:*
 /start - 시작 메시지
 /help - 이 도움말 보기
 /analyze - 페르소나 분석 시작
@@ -573,13 +748,13 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 /stats - 다이어리 통계
 /search - 다이어리 검색
 
-*사용 방법:*
-1. 사진을 보내면 자동으로 분석됩니다
-2. 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다
-3. 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다
-4. 분석 결과에 따라 맞춤형 조언을 받을 수 있습니다
+*💡 사용 팁:*
+• 📹 15초 영상으로 가장 정확한 분석 가능
+• 🤖 분석 후 AI 어드바이저와 상담하여 맞춤 솔루션 받기
+• 📍 위치 정보 공유로 날씨 기반 추천 받기
+• 📖 다이어리로 건강 변화 추적하기
 
-*건강 페르소나:*
+*🎯 건강 페르소나:*
 • P1: The Visionary Leader (비전 리더)
 • P2: The Balanced Builder (균형 조성가)
 • P3: The Dynamic Explorer (동적 탐험가)
@@ -609,7 +784,55 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async startAnalysis(chatId) {
-    const analysisText = `🔍 *페르소나 분석을 시작합니다*
+    // 웹 분석 링크 생성
+    const webAnalysisUrl = `http://localhost:3000?user_id=${chatId}`;
+    
+    const analysisText = `🔬 *정밀 페르소나 분석*
+
+*새로운 웹 분석 시스템이 준비되었습니다!*
+
+🌐 **웹에서 실시간 분석하기**
+• 15초 실시간 얼굴 촬영
+• 고정밀 생체 신호 분석 (심박수, 혈압)
+• AI 기반 페르소나 진단
+• 맞춤형 건강 솔루션 제공
+
+📱 **텔레그램에서 간편 분석**
+• 사진, 음성, 텍스트 기반 분석
+• 빠른 결과 확인
+
+*추천: 웹 분석 (가장 정확한 결과)*
+
+어떤 방법으로 분석하시겠습니까?`;
+
+    // 웹 분석 링크 버튼 생성
+    const webAnalysisButton = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🔬 정밀 분석하기 (웹)',
+              url: webAnalysisUrl
+            }
+          ],
+          [
+            {
+              text: '📱 텔레그램에서 분석',
+              callback_data: 'telegram_analysis'
+            }
+          ]
+        ]
+      }
+    };
+
+    await this.bot.sendMessage(chatId, analysisText, { 
+      parse_mode: 'Markdown',
+      ...webAnalysisButton
+    });
+  }
+
+  async showTelegramAnalysisOptions(chatId) {
+    const telegramAnalysisText = `📱 *텔레그램 분석 옵션*
 
 다음 중 하나를 선택해주세요:
 
@@ -632,7 +855,42 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 
 어떤 방법으로 분석하시겠습니까?`;
 
-    await this.bot.sendMessage(chatId, analysisText, { parse_mode: 'Markdown' });
+    await this.bot.sendMessage(chatId, telegramAnalysisText, { parse_mode: 'Markdown' });
+  }
+
+  async sendAnalysisResultToUser(userId, analysisResult) {
+    try {
+      const chatId = parseInt(userId);
+      const result = analysisResult.result;
+      
+      // 결과 카드 생성
+      const vitalSigns = result.vital_signs;
+      const persona = result.persona_analysis.persona;
+      
+      let message = `🎉 *분석 완료! 당신의 건강 페르소나*
+
+🏥 *생체 신호*
+• 심박수: ${vitalSigns.heart_rate} BPM
+• 혈압: ${vitalSigns.blood_pressure.systolic}/${vitalSigns.blood_pressure.diastolic} mmHg
+• 상태: ${vitalSigns.blood_pressure_status.status_kr}
+
+🎯 *당신의 페르소나*
+• ${persona.name} (${persona.code})
+• ${persona.description}
+• 희귀도: ${persona.rarity_kr} (${persona.percentage})
+
+💡 *맞춤 솔루션*
+${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solution}`).join('\n')}
+
+*더 자세한 정보는 웹에서 확인하세요!*`;
+
+      await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      
+      console.log(`✅ 분석 결과 전송 완료: 사용자 ${userId}`);
+      
+    } catch (error) {
+      console.error(`❌ 분석 결과 전송 실패 (사용자 ${userId}):`, error);
+    }
   }
 
   async showWeatherOptions(chatId) {
@@ -1664,6 +1922,152 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
     tags.push(...keywords);
     
     return tags;
+  }
+
+  // 원소 기반 페르소나 시스템
+  getElementalPersona(scores) {
+    const { vision, balance, dynamic, mindfulness } = scores;
+    
+    if (vision > 0.7) return {
+      name: '이그니스(Ignis)',
+      element: '🔥 불',
+      trait: '창의성과 열정의 지혜',
+      description: '창의적인 에너지가 넘치는 날입니다. 새로운 아이디어와 혁신적인 접근이 필요한 시기입니다.',
+      color: '#FF6B35'
+    };
+    
+    if (balance > 0.7) return {
+      name: '테라(Terra)', 
+      element: '🏔️ 땅',
+      trait: '안정과 실용성의 지혜',
+      description: '견고하고 안정적인 기반을 다지는 날입니다. 체계적이고 실용적인 접근이 효과적입니다.',
+      color: '#8B4513'
+    };
+    
+    if (dynamic > 0.7) return {
+      name: '아쿠아(Aqua)',
+      element: '🌊 물', 
+      trait: '유연성과 적응력의 지혜',
+      description: '유연하게 변화에 적응하는 날입니다. 새로운 환경이나 상황에 잘 대응할 수 있습니다.',
+      color: '#0066CC'
+    };
+    
+    return {
+      name: '에테르(Aether)',
+      element: '💨 공기',
+      trait: '직관과 영감의 지혜', 
+      description: '직관이 예민하고 영감을 받기 좋은 날입니다. 내면의 소리에 귀 기울여보세요.',
+      color: '#9370DB'
+    };
+  }
+
+  // 능동적 AI 동반자 - 먼저 말을 거는 AI
+  async sendProactiveAIAdvice(chatId, persona) {
+    const proactiveMessages = {
+      '이그니스(Ignis)': {
+        message: `🔥 *${persona.name}의 지혜*가 감지되었습니다!\n\n오늘 창의적인 에너지가 넘치는 날이네요. 혹시 최근에 풀리지 않던 문제가 있다면, 오늘 새로운 관점에서 다시 한번 생각해보는 건 어떨까요?\n\n제가 창의적 문제 해결을 위한 브레인스토밍 파트너가 되어드릴 수 있습니다! 💡`,
+        suggestions: ['창의적 아이디어 발굴하기', '혁신적 해결책 찾기', '새로운 프로젝트 시작하기']
+      },
+      '테라(Terra)': {
+        message: `🏔️ *${persona.name}의 지혜*가 감지되었습니다!\n\n오늘 안정적이고 체계적인 에너지가 필요한 날이네요. 미뤄뒀던 계획이나 정리할 일이 있다면, 오늘이 완벽한 타이밍입니다!\n\n제가 체계적인 계획 수립을 도와드릴 수 있습니다! 📋`,
+        suggestions: ['업무 계획 세우기', '목표 정리하기', '습관 형성하기']
+      },
+      '아쿠아(Aqua)': {
+        message: `🌊 *${persona.name}의 지혜*가 감지되었습니다!\n\n오늘 유연하게 변화에 적응하는 에너지가 필요한 날이네요. 새로운 상황이나 도전이 예상된다면, 오늘의 유연한 마음가짐으로 잘 대응할 수 있을 것입니다!\n\n제가 적응 전략을 함께 고민해드릴 수 있습니다! 🌊`,
+        suggestions: ['새로운 환경 적응하기', '변화 대응 전략 세우기', '유연한 사고 연습하기']
+      },
+      '에테르(Aether)': {
+        message: `💨 *${persona.name}의 지혜*가 감지되었습니다!\n\n오늘 직관이 예민하고 영감을 받기 좋은 날이네요. 중요한 결정이 필요하거나 내면의 소리를 들어야 할 때입니다!\n\n제가 직관적 의사결정을 지원해드릴 수 있습니다! ✨`,
+        suggestions: ['직관적 의사결정하기', '명상과 내면 탐색하기', '영감 받기']
+      }
+    };
+
+    const advice = proactiveMessages[persona.name];
+    if (advice) {
+      await this.bot.sendMessage(chatId, advice.message, { parse_mode: 'Markdown' });
+      
+      // 제안 버튼 생성
+      const keyboard = {
+        inline_keyboard: advice.suggestions.map(suggestion => [{
+          text: suggestion,
+          callback_data: `proactive_${persona.name.toLowerCase().split('(')[0]}_${suggestion}`
+        }])
+      };
+      
+      await this.bot.sendMessage(chatId, 
+        '💡 *오늘의 제안*\n\n어떤 활동을 도와드릴까요?',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: keyboard
+        }
+      );
+    }
+  }
+
+  // 지식의 갈증 유발 질문
+  getCuriosityQuestion(persona) {
+    const curiosityQuestions = {
+      '이그니스(Ignis)': "왜 오늘 당신의 신체는 '창의성'을 선택했을까요? 어젯밤의 꿈이나 최근 경험이 영향을 미쳤을 수 있습니다. 🔍 *정밀 분석*으로 원인을 파악해보세요!",
+      '테라(Terra)': "오늘의 '안정' 상태는 어떤 요인에서 비롯되었을까요? 수면 패턴, 식습관, 스트레스 수준을 종합 분석해드립니다. 📊 *심화 리포트*로 확인해보세요!",
+      '아쿠아(Aqua)': "유연한 적응력이 필요한 상황이 예상됩니다. 어떤 변화에 대비해야 할까요? 🔮 *미래 예측 분석*으로 준비해보세요!",
+      '에테르(Aether)': "직관이 예민한 오늘, 중요한 결정이 필요한가요? ⚖️ *의사결정 지원 분석*으로 최적의 선택을 도와드립니다!"
+    };
+    
+    return curiosityQuestions[persona.name] || curiosityQuestions['에테르(Aether)'];
+  }
+
+  // 능동적 제안 처리
+  async handleProactiveSuggestion(chatId, callbackData) {
+    const parts = callbackData.split('_');
+    const personaType = parts[1];
+    const suggestion = parts.slice(2).join('_');
+    
+    const suggestionHandlers = {
+      'ignis': {
+        '창의적 아이디어 발굴하기': '🔥 *창의적 아이디어 발굴 세션*\n\n오늘의 이그니스 에너지를 활용해보세요!\n\n1️⃣ **브레인스토밍**: 현재 직면한 문제를 3가지 관점에서 접근해보기\n2️⃣ **아날로그 사고**: 완전히 다른 분야의 해결책을 적용해보기\n3️⃣ **역발상**: 문제를 거꾸로 생각해보기\n\n어떤 주제로 창의적 사고를 시작할까요?',
+        '혁신적 해결책 찾기': '💡 *혁신적 해결책 워크숍*\n\n기존 방식을 완전히 뒤엎는 해결책을 찾아보세요!\n\n🎯 **목표**: 현재 문제의 근본 원인을 파악하고 혁신적 접근법 도출\n📋 **단계**: 문제 정의 → 기존 방식 분석 → 한계점 파악 → 혁신적 대안 제시\n\n어떤 문제를 혁신적으로 해결하고 싶으신가요?',
+        '새로운 프로젝트 시작하기': '🚀 *새로운 프로젝트 기획*\n\n이그니스의 창의적 에너지로 새로운 여정을 시작해보세요!\n\n📝 **프로젝트 기획 가이드**:\n• 비전과 목표 설정\n• 창의적 접근법 설계\n• 실행 계획 수립\n• 성공 지표 정의\n\n어떤 새로운 프로젝트를 시작하고 싶으신가요?'
+      },
+      'terra': {
+        '업무 계획 세우기': '📋 *체계적 업무 계획*\n\n테라의 안정적 에너지로 견고한 기반을 다져보세요!\n\n🗓️ **계획 수립 프레임워크**:\n• 우선순위 설정 (중요도 vs 긴급성)\n• 시간 블록 할당\n• 마일스톤 정의\n• 진행 상황 추적\n\n어떤 업무를 체계적으로 계획하고 싶으신가요?',
+        '목표 정리하기': '🎯 *목표 정리 및 설정*\n\n테라의 실용적 에너지로 명확한 목표를 세워보세요!\n\n📊 **목표 설정 방법**:\n• SMART 목표 설정 (구체적, 측정 가능, 달성 가능, 관련성, 기한)\n• 장단기 목표 균형\n• 실행 가능한 액션 플랜\n• 정기적 리뷰 시스템\n\n어떤 목표를 정리하고 싶으신가요?',
+        '습관 형성하기': '🔄 *건강한 습관 형성*\n\n테라의 안정적 에너지로 지속 가능한 습관을 만들어보세요!\n\n⏰ **습관 형성 전략**:\n• 작은 습관부터 시작 (1% 개선)\n• 환경 설계 (습관 실행을 쉽게)\n• 스택킹 (기존 습관에 연결)\n• 추적 및 보상\n\n어떤 습관을 형성하고 싶으신가요?'
+      },
+      'aqua': {
+        '새로운 환경 적응하기': '🌊 *적응력 향상 가이드*\n\n아쿠아의 유연한 에너지로 새로운 환경에 잘 적응해보세요!\n\n🔄 **적응 전략**:\n• 마인드셋 전환 (변화를 기회로)\n• 관찰 및 학습 (새로운 환경 파악)\n• 유연한 접근법 (다양한 방법 시도)\n• 네트워킹 (새로운 관계 구축)\n\n어떤 새로운 환경에 적응하고 싶으신가요?',
+        '변화 대응 전략 세우기': '🛡️ *변화 대응 전략*\n\n아쿠아의 적응력을 활용해 변화에 대비해보세요!\n\n📈 **변화 대응 프레임워크**:\n• 변화 인식 및 수용\n• 영향도 분석\n• 대응 전략 수립\n• 실행 및 모니터링\n\n어떤 변화에 대비하고 싶으신가요?',
+        '유연한 사고 연습하기': '🧠 *유연한 사고 훈련*\n\n아쿠아의 유연성을 활용해 사고의 경계를 넓혀보세요!\n\n💭 **유연한 사고 연습**:\n• 다각적 관점 연습\n• 가정에 의문 제기\n• 창의적 문제 해결\n• 감정적 유연성 향상\n\n어떤 주제로 유연한 사고를 연습하고 싶으신가요?'
+      },
+      'aether': {
+        '직관적 의사결정하기': '✨ *직관적 의사결정 가이드*\n\n에테르의 직관적 에너지를 활용해 중요한 결정을 내려보세요!\n\n🔮 **직관 활용 방법**:\n• 내면의 소리 듣기\n• 몸의 반응 관찰\n• 꿈과 영감 활용\n• 명상과 명료성 확보\n\n어떤 결정을 직관적으로 내리고 싶으신가요?',
+        '명상과 내면 탐색하기': '🧘‍♀️ *내면 탐색 여정*\n\n에테르의 영적 에너지로 깊은 내면을 탐색해보세요!\n\n🌙 **내면 탐색 방법**:\n• 명상과 마음챙김\n• 자아 성찰과 일기\n• 꿈 해석과 상징 이해\n• 영적 성장과 깨달음\n\n어떤 방식으로 내면을 탐색하고 싶으신가요?',
+        '영감 받기': '💫 *영감 수집 여정*\n\n에테르의 영감적 에너지로 창의적 영감을 받아보세요!\n\n🌟 **영감 수집 방법**:\n• 자연과의 연결\n• 예술과 문화 체험\n• 대화와 교류\n• 고독과 명상\n\n어떤 분야에서 영감을 받고 싶으신가요?'
+      }
+    };
+    
+    const handler = suggestionHandlers[personaType];
+    if (handler && handler[suggestion]) {
+      await this.bot.sendMessage(chatId, handler[suggestion], { parse_mode: 'Markdown' });
+      
+      // 추가 상호작용 옵션 제공
+      const keyboard = {
+        inline_keyboard: [
+          [{ text: '💬 더 자세히 상담하기', callback_data: `consult_${personaType}_${suggestion}` }],
+          [{ text: '📊 정밀 분석 받기', callback_data: `premium_${personaType}_${suggestion}` }],
+          [{ text: '🎯 구체적 액션 플랜', callback_data: `action_${personaType}_${suggestion}` }]
+        ]
+      };
+      
+      await this.bot.sendMessage(chatId, 
+        '💡 *다음 단계*\n\n어떤 도움을 더 받고 싶으신가요?',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: keyboard
+        }
+      );
+    } else {
+      await this.bot.sendMessage(chatId, '😔 해당 제안에 대한 정보를 찾을 수 없습니다.');
+    }
   }
 }
 
