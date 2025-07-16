@@ -4,6 +4,7 @@ const { EnvironmentalIntelligence } = require('./environmental-intelligence');
 const { LimitedEditionEvents } = require('./limited-edition-events');
 const { ImageGenerator } = require('./image-generator');
 const DataDreamscapeGenerator = require('./data-dreamscape-generator');
+const { PersonaDiary } = require('./persona-diary');
 
 class MessageHandler {
   constructor(bot, personaAnalyzer) {
@@ -16,6 +17,7 @@ class MessageHandler {
     this.limitedEditionEvents = new LimitedEditionEvents(); // 한정판 이벤트 시스템
     this.imageGenerator = new ImageGenerator(); // AI 이미지 생성 시스템
     this.dreamscapeGenerator = new DataDreamscapeGenerator(); // 데이터 드림스케이프 생성 시스템
+    this.personaDiary = new PersonaDiary(); // 페르소나 다이어리 시스템
   }
 
   async handleMessage(msg) {
@@ -114,6 +116,26 @@ class MessageHandler {
       
       case '/styles':
         await this.showAvailableStyles(chatId);
+        break;
+      
+      case '/diary':
+        await this.showDiaryOptions(chatId);
+        break;
+      
+      case '/write':
+        await this.startDiaryEntry(chatId);
+        break;
+      
+      case '/read':
+        await this.showDiaryEntries(chatId);
+        break;
+      
+      case '/stats':
+        await this.showDiaryStats(chatId);
+        break;
+      
+      case '/search':
+        await this.startDiarySearch(chatId);
         break;
       
       default:
@@ -235,6 +257,12 @@ class MessageHandler {
   async handleTextMessage(msg, userState) {
     const chatId = msg.chat.id;
     const text = msg.text;
+
+    // 다이어리 상태 처리
+    if (userState.diaryState) {
+      await this.handleDiaryState(chatId, text, userState);
+      return;
+    }
 
     // 날씨 관련 키워드
     const weatherKeywords = ['날씨', '비', '맑음', '흐림', '더워', '추워', '습도', '기온'];
@@ -437,6 +465,11 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 /logo - 🎨 나만의 로고 완성
 /limited - 한정판 이미지 생성
 /styles - 사용 가능한 스타일 목록
+/diary - 페르소나 다이어리
+/write - 다이어리 작성
+/read - 다이어리 읽기
+/stats - 다이어리 통계
+/search - 다이어리 검색
 
 *사용 방법:*
 1. 사진을 보내면 자동으로 분석됩니다
@@ -457,6 +490,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 • 🧠 5차원 기질 분석 (사고형, 내향형, 주도형, 실용형, 안정형)
 • 🔄 페르소나 진화 추적으로 변화 패턴 분석
 • 🌍 환경 지능 통합 (날씨, 문화, 경제, 정치)
+• 📖 페르소나 다이어리 (개인화된 일기 작성)
 
 *이미지 생성 기능:*
 • 기본 페르소나 이미지 (/image)
@@ -1185,6 +1219,342 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
     message += `• /limited - 한정판 이벤트 이미지 생성`;
 
     await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  // ===== 페르소나 다이어리 관련 메서드들 =====
+
+  /**
+   * 다이어리 옵션 표시
+   */
+  async showDiaryOptions(chatId) {
+    const message = `📖 *MKM Lab 페르소나 다이어리*\n\n` +
+                   `당신의 페르소나와 함께하는 개인화된 다이어리를 시작해보세요!\n\n` +
+                   `📝 *사용 가능한 명령어*\n\n` +
+                   `• /write - 새로운 다이어리 작성\n` +
+                   `• /read - 최근 다이어리 읽기\n` +
+                   `• /stats - 다이어리 통계 보기\n` +
+                   `• /search - 다이어리 검색\n\n` +
+                   `💡 *특별한 기능*\n` +
+                   `• 페르소나별 맞춤 다이어리 프롬프트\n` +
+                   `• 날씨와 연동된 감정 분석\n` +
+                   `• 기분과 활동 패턴 추적\n` +
+                   `• 주간/월간 통계 리포트`;
+
+    await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  /**
+   * 다이어리 작성 시작
+   */
+  async startDiaryEntry(chatId) {
+    const userState = this.userStates.get(chatId) || {};
+    
+    if (!userState.currentPersona) {
+      await this.bot.sendMessage(chatId, 
+        '📝 다이어리를 작성하려면 먼저 페르소나 분석을 진행해주세요!\n\n' +
+        '사진을 보내거나 /analyze 명령어를 사용해보세요!'
+      );
+      return;
+    }
+
+    // 다이어리 작성 상태로 설정
+    userState.diaryState = 'waiting_for_content';
+    this.userStates.set(chatId, userState);
+
+    // 페르소나별 맞춤 프롬프트 생성
+    const weather = userState.environmentalContext?.weather?.condition || '맑음';
+    const prompt = this.personaDiary.generateDiaryPrompt(userState.currentPersona, weather);
+
+    const message = `📝 *새로운 다이어리 작성*\n\n` +
+                   `페르소나: ${userState.currentPersona}\n` +
+                   `날씨: ${weather}\n\n` +
+                   `💭 *오늘의 다이어리 프롬프트*\n` +
+                   `${prompt}\n\n` +
+                   `📝 위 프롬프트를 참고하여 오늘 하루의 경험과 생각을 자유롭게 적어주세요.\n\n` +
+                   `💡 *다이어리 작성 팁*\n` +
+                   `• 감정과 기분을 포함해보세요\n` +
+                   `• 주요 활동들을 기록해보세요\n` +
+                   `• 특별한 순간이나 깨달음을 적어보세요\n` +
+                   `• 내일의 계획이나 목표도 포함해보세요`;
+
+    await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  /**
+   * 다이어리 항목 저장
+   */
+  async saveDiaryEntry(chatId, content) {
+    const userState = this.userStates.get(chatId) || {};
+    
+    if (!userState.currentPersona) {
+      await this.bot.sendMessage(chatId, '❌ 페르소나 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      const entry = {
+        content: content,
+        mood: this.extractMoodFromContent(content),
+        activities: this.extractActivitiesFromContent(content),
+        persona: userState.currentPersona,
+        weather: userState.environmentalContext?.weather?.condition || '알 수 없음',
+        tags: this.extractTagsFromContent(content)
+      };
+
+      const savedEntry = await this.personaDiary.saveDiaryEntry(chatId.toString(), entry);
+
+      await this.bot.sendMessage(chatId, 
+        `✅ *다이어리 저장 완료!*\n\n` +
+        `📅 ${new Date().toLocaleDateString()}\n` +
+        `📝 ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}\n\n` +
+        `💡 /read 명령어로 최근 다이어리를 확인할 수 있습니다!`,
+        { parse_mode: 'Markdown' }
+      );
+
+      // 다이어리 상태 초기화
+      userState.diaryState = null;
+      this.userStates.set(chatId, userState);
+
+    } catch (error) {
+      console.error('다이어리 저장 오류:', error);
+      await this.bot.sendMessage(chatId, '❌ 다이어리 저장 중 오류가 발생했습니다.');
+    }
+  }
+
+  /**
+   * 다이어리 항목들 표시
+   */
+  async showDiaryEntries(chatId) {
+    try {
+      const entries = await this.personaDiary.getDiaryEntries(chatId.toString(), 5);
+      
+      if (entries.length === 0) {
+        await this.bot.sendMessage(chatId, 
+          '📖 아직 작성된 다이어리가 없습니다.\n\n' +
+          '/write 명령어로 첫 번째 다이어리를 작성해보세요!'
+        );
+        return;
+      }
+
+      let message = `📖 *최근 다이어리 (${entries.length}개)*\n\n`;
+      
+      entries.forEach((entry, index) => {
+        const date = new Date(entry.timestamp).toLocaleDateString();
+        const content = entry.content.length > 100 ? 
+          entry.content.substring(0, 100) + '...' : entry.content;
+        
+        message += `📅 *${date}*\n`;
+        message += `😊 기분: ${entry.mood || '기록 없음'}\n`;
+        message += `📝 ${content}\n\n`;
+      });
+
+      message += `💡 더 많은 다이어리를 보려면 /stats 명령어를 사용하세요!`;
+
+      await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+
+    } catch (error) {
+      console.error('다이어리 읽기 오류:', error);
+      await this.bot.sendMessage(chatId, '❌ 다이어리 읽기 중 오류가 발생했습니다.');
+    }
+  }
+
+  /**
+   * 다이어리 통계 표시
+   */
+  async showDiaryStats(chatId) {
+    try {
+      const stats = await this.personaDiary.getDiaryStats(chatId.toString());
+      
+      let message = `📊 *다이어리 통계*\n\n`;
+      
+      message += `📝 총 작성 수: ${stats.totalEntries}개\n`;
+      
+      if (stats.averageMood > 0) {
+        message += `😊 평균 기분 점수: ${stats.averageMood}/5.0\n\n`;
+      }
+
+      if (Object.keys(stats.moodDistribution).length > 0) {
+        message += `😊 *기분 분포*\n`;
+        Object.entries(stats.moodDistribution).forEach(([mood, count]) => {
+          message += `• ${mood}: ${count}회\n`;
+        });
+        message += `\n`;
+      }
+
+      if (Object.keys(stats.activityFrequency).length > 0) {
+        message += `🏃 *주요 활동*\n`;
+        const topActivities = Object.entries(stats.activityFrequency)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5);
+        
+        topActivities.forEach(([activity, count]) => {
+          message += `• ${activity}: ${count}회\n`;
+        });
+        message += `\n`;
+      }
+
+      message += `💡 /search 명령어로 특정 키워드로 다이어리를 검색할 수 있습니다!`;
+
+      await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+
+    } catch (error) {
+      console.error('다이어리 통계 오류:', error);
+      await this.bot.sendMessage(chatId, '❌ 다이어리 통계 계산 중 오류가 발생했습니다.');
+    }
+  }
+
+  /**
+   * 다이어리 검색 시작
+   */
+  async startDiarySearch(chatId) {
+    const userState = this.userStates.get(chatId) || {};
+    userState.diaryState = 'waiting_for_search';
+    this.userStates.set(chatId, userState);
+
+    await this.bot.sendMessage(chatId, 
+      `🔍 *다이어리 검색*\n\n` +
+      `검색하고 싶은 키워드를 입력해주세요.\n\n` +
+      `💡 *검색 예시*\n` +
+      `• 운동, 요가, 명상\n` +
+      `• 회사, 학교, 친구\n` +
+      `• 스트레스, 기쁨, 감사\n` +
+      `• 프로젝트, 학습, 여행`
+    );
+  }
+
+  /**
+   * 다이어리 검색 실행
+   */
+  async searchDiaryEntries(chatId, query) {
+    try {
+      const results = await this.personaDiary.searchDiaryEntries(chatId.toString(), query);
+      
+      if (results.length === 0) {
+        await this.bot.sendMessage(chatId, 
+          `🔍 "${query}"에 대한 검색 결과가 없습니다.\n\n` +
+          `다른 키워드로 검색해보세요!`
+        );
+        return;
+      }
+
+      let message = `🔍 *"${query}" 검색 결과 (${results.length}개)*\n\n`;
+      
+      results.slice(0, 3).forEach((entry, index) => {
+        const date = new Date(entry.timestamp).toLocaleDateString();
+        const content = entry.content.length > 80 ? 
+          entry.content.substring(0, 80) + '...' : entry.content;
+        
+        message += `📅 *${date}*\n`;
+        message += `📝 ${content}\n\n`;
+      });
+
+      if (results.length > 3) {
+        message += `... 그리고 ${results.length - 3}개 더\n\n`;
+      }
+
+      message += `💡 더 정확한 검색을 위해 구체적인 키워드를 사용해보세요!`;
+
+      await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+
+    } catch (error) {
+      console.error('다이어리 검색 오류:', error);
+      await this.bot.sendMessage(chatId, '❌ 다이어리 검색 중 오류가 발생했습니다.');
+    }
+  }
+
+  // ===== 다이어리 상태 처리 =====
+
+  /**
+   * 다이어리 상태별 메시지 처리
+   */
+  async handleDiaryState(chatId, text, userState) {
+    switch (userState.diaryState) {
+      case 'waiting_for_content':
+        await this.saveDiaryEntry(chatId, text);
+        break;
+      
+      case 'waiting_for_search':
+        await this.searchDiaryEntries(chatId, text);
+        // 검색 상태 초기화
+        userState.diaryState = null;
+        this.userStates.set(chatId, userState);
+        break;
+      
+      default:
+        // 알 수 없는 상태는 초기화
+        userState.diaryState = null;
+        this.userStates.set(chatId, userState);
+        await this.bot.sendMessage(chatId, 
+          '❓ 알 수 없는 상태입니다. 다시 시작해주세요.'
+        );
+    }
+  }
+
+  // ===== 헬퍼 메서드들 =====
+
+  /**
+   * 텍스트에서 기분 추출
+   */
+  extractMoodFromContent(content) {
+    const moodKeywords = {
+      '매우 좋음': ['매우 좋', '완벽', '최고', '행복', '기쁨', '즐거움'],
+      '좋음': ['좋', '만족', '기쁘', '즐거', '편안', '평온'],
+      '보통': ['보통', '그럭저럭', '괜찮', '무난'],
+      '나쁨': ['나쁘', '안 좋', '스트레스', '피곤', '지치'],
+      '매우 나쁨': ['매우 나쁘', '최악', '끔찍', '힘들', '고통']
+    };
+
+    const lowerContent = content.toLowerCase();
+    
+    for (const [mood, keywords] of Object.entries(moodKeywords)) {
+      if (keywords.some(keyword => lowerContent.includes(keyword))) {
+        return mood;
+      }
+    }
+    
+    return '보통';
+  }
+
+  /**
+   * 텍스트에서 활동 추출
+   */
+  extractActivitiesFromContent(content) {
+    const activityKeywords = [
+      '운동', '달리기', '걷기', '수영', '요가', '명상',
+      '독서', '공부', '학습', '작업', '회의', '프로젝트',
+      '요리', '청소', '쇼핑', '여행', '영화', '음악',
+      '친구', '가족', '데이트', '산책', '카페', '식사'
+    ];
+
+    const activities = [];
+    const lowerContent = content.toLowerCase();
+    
+    activityKeywords.forEach(activity => {
+      if (lowerContent.includes(activity)) {
+        activities.push(activity);
+      }
+    });
+    
+    return activities;
+  }
+
+  /**
+   * 텍스트에서 태그 추출
+   */
+  extractTagsFromContent(content) {
+    const tags = [];
+    
+    // 해시태그 추출
+    const hashtags = content.match(/#[\w가-힣]+/g);
+    if (hashtags) {
+      tags.push(...hashtags.map(tag => tag.substring(1)));
+    }
+    
+    // 주요 키워드 추출
+    const keywords = this.extractActivitiesFromContent(content);
+    tags.push(...keywords);
+    
+    return tags;
   }
 }
 
