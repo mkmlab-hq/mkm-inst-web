@@ -20,5 +20,9 @@ EXPOSE 8080
 ENV NODE_ENV=production
 ENV PORT=8080
 
+# 헬스체크 추가
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
 # 애플리케이션 시작
 CMD ["node", "src/index.js"] 

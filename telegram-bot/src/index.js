@@ -8,10 +8,31 @@ const { MessageHandler } = require('./message-handler');
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const port = process.env.PORT || 8080;
 
+console.log('🔧 환경 변수 확인:');
+console.log(`   PORT: ${port}`);
+console.log(`   TELEGRAM_BOT_TOKEN: ${token ? '설정됨' : '설정되지 않음'}`);
+
 if (!token) {
   console.error('❌ TELEGRAM_BOT_TOKEN이 설정되지 않았습니다.');
-  console.log('📝 .env 파일에 TELEGRAM_BOT_TOKEN을 추가해주세요.');
-  process.exit(1);
+  console.log('📝 Cloud Run 환경 변수에 TELEGRAM_BOT_TOKEN을 추가해주세요.');
+  console.log('🔄 봇 없이 HTTP 서버만 시작합니다...');
+  
+  // 토큰이 없어도 HTTP 서버는 시작
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'running',
+      message: 'HTTP 서버는 실행 중이지만 텔레그램 봇 토큰이 설정되지 않았습니다.',
+      service: 'mkm-telegram-bot',
+      timestamp: new Date().toISOString()
+    }));
+  });
+
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 HTTP 서버가 포트 ${port}에서 시작되었습니다.`);
+  });
+
+  return;
 }
 
 // 봇 초기화
@@ -23,6 +44,18 @@ const messageHandler = new MessageHandler(bot, personaAnalyzer);
 
 // HTTP 서버 생성 (Cloud Run 요구사항)
 const server = http.createServer((req, res) => {
+  // CORS 헤더 추가
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // OPTIONS 요청 처리
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
   // 헬스체크 엔드포인트
   if (req.url === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -51,8 +84,8 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({ error: 'Not Found' }));
 });
 
-// 서버 시작
-server.listen(port, () => {
+// 서버 시작 (0.0.0.0으로 바인딩하여 Cloud Run에서 접근 가능하도록)
+server.listen(port, '0.0.0.0', () => {
   console.log(`🚀 HTTP 서버가 포트 ${port}에서 시작되었습니다.`);
   console.log(`🔗 헬스체크: http://localhost:${port}/health`);
 });
