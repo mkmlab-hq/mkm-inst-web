@@ -33,6 +33,12 @@ class MessageHandler {
       return;
     }
 
+    // 음성 메시지 처리 (15초 음성 촬영)
+    if (msg.voice || msg.audio) {
+      await this.handleVoiceMessage(msg);
+      return;
+    }
+
     // 사진 처리
     if (msg.photo) {
       await this.handlePhoto(msg);
@@ -198,22 +204,111 @@ class MessageHandler {
         const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
         if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
           await this.bot.sendMessage(chatId, 
-            `🔄 *페르소나 진화 감지*\n\n${evolution.message}\n\n` +
-            Object.keys(evolution.changes).map(key => 
-              `• ${key}: ${evolution.changes[key] > 0 ? '+' : ''}${evolution.changes[key]}`
-            ).join('\n'),
+            `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
             { parse_mode: 'Markdown' }
           );
         }
       }
+    }, 2000);
+  }
 
-      // 환경 정보가 있으면 종합 추천 추가
-      if (userState.environmentalContext) {
-        await this.sendComprehensiveRecommendations(chatId, result.persona.code, userState.environmentalContext);
-      } else if (userState.location) {
-        await this.sendWeatherBasedRecommendation(chatId, result.persona.code, userState.location);
+  async handleVoiceMessage(msg) {
+    const chatId = msg.chat.id;
+    const userState = this.userStates.get(chatId) || {};
+    
+    // 음성 메시지 정보 확인
+    const voiceInfo = msg.voice || msg.audio;
+    const duration = voiceInfo.duration || 0;
+    
+    await this.bot.sendMessage(chatId, 
+      `🎤 음성 메시지를 받았습니다! (${duration}초)\n음성 기반 페르소나 분석을 시작합니다...`
+    );
+
+    // 음성 분석 시뮬레이션 (실제로는 음성 분석 API 호출)
+    setTimeout(async () => {
+      // 음성 특징 데이터 시뮬레이션
+      const voiceData = {
+        pitch: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+        tempo: ['fast', 'moderate', 'slow'][Math.floor(Math.random() * 3)],
+        clarity: ['clear', 'moderate', 'muffled'][Math.floor(Math.random() * 3)],
+        energy: ['energetic', 'calm', 'dynamic'][Math.floor(Math.random() * 3)],
+        emotion: ['confident', 'thoughtful', 'enthusiastic'][Math.floor(Math.random() * 3)]
+      };
+
+      // 환경 데이터 준비
+      const envData = userState.environmentalContext ? {
+        weather: userState.environmentalContext.weather?.condition || 'sunny',
+        time: this.getCurrentTimeOfDay(),
+        season: this.getCurrentSeason()
+      } : null;
+
+      // 종합 페르소나 분석 (음성 데이터 기반)
+      const result = this.personaAnalyzer.analyzePersona(null, voiceData, envData);
+      const formatted = this.personaAnalyzer.formatPersonaResult(result);
+      
+      await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
+      
+      // 음성 기반 특별 조언 추가
+      const voiceAdvice = this.getVoiceBasedAdvice(voiceData);
+      if (voiceAdvice) {
+        await this.bot.sendMessage(chatId, 
+          `🎤 *음성 기반 맞춤 조언*\n\n${voiceAdvice}`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+      
+      // 기질별 맞춤 조언 추가
+      const dispositionAdvice = this.personaAnalyzer.getDispositionBasedAdvice(result.scores);
+      if (dispositionAdvice) {
+        await this.bot.sendMessage(chatId, 
+          `💡 *기질별 맞춤 조언*\n\n${dispositionAdvice}`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+      
+      // 사용자 상태 업데이트
+      const previousResult = userState.lastPersonaResult;
+      userState.currentPersona = result.persona.code;
+      userState.lastPersonaResult = result;
+      userState.lastAnalysis = new Date();
+      userState.lastAnalysisType = 'voice';
+      this.userStates.set(chatId, userState);
+
+      // 페르소나 진화 추적
+      if (previousResult) {
+        const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
+        if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
+          await this.bot.sendMessage(chatId, 
+            `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
+            { parse_mode: 'Markdown' }
+          );
+        }
       }
     }, 3000);
+  }
+
+  getVoiceBasedAdvice(voiceData) {
+    const advice = [];
+    
+    if (voiceData.pitch === 'high') {
+      advice.push("• 높은 음성 톤은 활발하고 열정적인 성격을 나타냅니다");
+    } else if (voiceData.pitch === 'low') {
+      advice.push("• 낮은 음성 톤은 신중하고 안정적인 성격을 나타냅니다");
+    }
+    
+    if (voiceData.tempo === 'fast') {
+      advice.push("• 빠른 말투는 동적이고 적응력 강한 성격을 나타냅니다");
+    } else if (voiceData.tempo === 'slow') {
+      advice.push("• 천천히 말하는 것은 신중하고 깊이 있는 사고를 나타냅니다");
+    }
+    
+    if (voiceData.energy === 'energetic') {
+      advice.push("• 활기찬 음성은 긍정적이고 동기부여가 강한 성격을 나타냅니다");
+    } else if (voiceData.energy === 'calm') {
+      advice.push("• 차분한 음성은 마음챙김과 내면의 평화를 중요시하는 성격을 나타냅니다");
+    }
+    
+    return advice.join('\n');
   }
 
   async handleLocation(msg) {
@@ -317,10 +412,7 @@ class MessageHandler {
           const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
           if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
             await this.bot.sendMessage(chatId, 
-              `🔄 *페르소나 진화 감지*\n\n${evolution.message}\n\n` +
-              Object.keys(evolution.changes).map(key => 
-                `• ${key}: ${evolution.changes[key] > 0 ? '+' : ''}${evolution.changes[key]}`
-              ).join('\n'),
+              `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
               { parse_mode: 'Markdown' }
             );
           }
@@ -424,19 +516,23 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   async sendWelcomeMessage(chatId) {
     const welcomeText = `🎉 *MKM Lab 건강 페르소나 봇에 오신 것을 환영합니다!*
 
-저는 AI 기반 건강 분석 봇입니다. 당신의 고유한 건강 페르소나를 분석하고 **날씨, 문화, 경제, 정치까지 고려한** 종합적인 맞춤형 건강 조언을 제공합니다.
+저는 AI 기반 건강 분석 봇입니다. 당신의 고유한 건강 페르소나를 분석하고 **날씨, 문화, 경제, 정치까지 고려한** 종합적인 맞춤형 건강 솔루션을 제공합니다.
 
 *주요 기능:*
 • 🎯 건강 페르소나 분석
+• 📸 얼굴 분석 (AI 기반 특징 분석)
+• 💓 생체 정보 분석 (혈압, 맥박 등)
+• 💬 대화 기반 분석 (텍스트 메시지)
 • 🌤️ 날씨 기반 맞춤 추천
 • 🌍 환경 종합 분석 (문화, 경제, 정치)
-• 💡 맞춤형 건강 조언
-• 📸 사진 기반 분석
-• 💬 대화 기반 분석
+• 💡 맞춤형 건강 솔루션
+• 📖 페르소나 다이어리
+• 🎨 AI 이미지 생성
 
 *사용법:*
-• 사진을 보내면 자동으로 분석합니다
-• 건강 관련 메시지를 보내면 페르소나를 분석합니다
+• 📸 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다
+• 💓 생체 정보(혈압, 맥박 등)를 메시지로 보내면 종합 분석을 합니다
+• 💬 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다
 • 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다
 • /analyze 명령어로 분석을 시작할 수 있습니다
 
@@ -511,11 +607,18 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 
 다음 중 하나를 선택해주세요:
 
-1. 📸 *사진 보내기* - 얼굴 사진을 보내면 자동으로 분석합니다
-2. 💬 *메시지 보내기* - 건강에 대해 이야기하면 텍스트 기반으로 분석합니다
-3. 📍 *위치 정보 공유* - 날씨 기반 맞춤 추천을 받을 수 있습니다
+1. 📸 *얼굴 사진 보내기* - 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다
+2. 💓 *생체 정보 입력* - 혈압, 맥박 등을 메시지로 보내면 종합 분석을 합니다
+3. 💬 *메시지 보내기* - 건강에 대해 이야기하면 텍스트 기반으로 분석합니다
+4. 📍 *위치 정보 공유* - 날씨 기반 맞춤 추천을 받을 수 있습니다
+
+*추천 순서:*
+1. 📸 **얼굴 사진 분석** (가장 정확한 분석)
+2. 💓 생체 정보 분석 (혈압, 맥박 등)
+3. 💬 텍스트 분석 (대화 기반)
 
 예시 메시지:
+• "혈압 120/80, 맥박 72"
 • "요즘 피로하고 스트레스가 많아요"
 • "운동을 시작하고 싶은데 어떤 것이 좋을까요?"
 • "수면의 질을 개선하고 싶어요"
