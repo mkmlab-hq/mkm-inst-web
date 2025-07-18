@@ -30,6 +30,8 @@ COPY . /app
 
 # PORT 환경 변수 설정
 ENV PORT 8080
+ENV PYTHONPATH=/app:/app/api
+ENV PYTHONUNBUFFERED=1
 
 # uvicorn 서버 실행 명령어
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
