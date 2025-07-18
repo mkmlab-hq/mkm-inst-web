@@ -785,7 +785,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 
   async startAnalysis(chatId) {
     // 웹 분석 링크 생성
-    const webAnalysisUrl = `http://localhost:3000?user_id=${chatId}`;
+    const webAnalysisUrl = `https://mkm-inst-web-abcdefg-uc.a.run.app?user_id=${chatId}`;
     
     const analysisText = `🔬 *정밀 페르소나 분석*
 
@@ -938,8 +938,7 @@ ${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solutio
 
   async showAdviceOptions(chatId) {
     const userState = this.userStates.get(chatId);
-    
-    if (!userState.currentPersona) {
+    if (!userState || !userState.currentPersona) {
       await this.bot.sendMessage(chatId, 
         '먼저 페르소나 분석을 진행해주세요!\n/analyze 명령어를 입력하거나 건강에 대해 이야기해보세요.'
       );
