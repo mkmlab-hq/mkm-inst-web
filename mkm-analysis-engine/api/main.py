@@ -588,5 +588,30 @@ async def analyze_face(video: UploadFile = File(...)):
         "reference_papers": reference_papers
     }
 
+# --- 디버그 엔드포인트 시작 ---
+import sys
+import subprocess
+
+@app.get("/debug/env")
+async def debug_env():
+    """
+    컨테이너 내부의 Python 환경 변수와 설치된 패키지 목록을 반환합니다.
+    """
+    try:
+        sys_path = sys.path
+        pip_list_output = subprocess.check_output(["pip", "list", "--disable-pip-version-check"]).decode("utf-8")
+        librosa_installed = "librosa" in pip_list_output.lower()
+        return {
+            "status": "success",
+            "message": "디버그 환경 정보",
+            "sys_path": sys_path,
+            "pip_list": pip_list_output.splitlines(),
+            "librosa_status": "INSTALLED" if librosa_installed else "NOT_INSTALLED",
+            "installed_librosa_version": [line for line in pip_list_output.splitlines() if "librosa" in line.lower()]
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"디버그 정보 가져오기 오류: {str(e)}"}
+# --- 디버그 엔드포인트 끝 ---
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
