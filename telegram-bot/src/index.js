@@ -48,8 +48,10 @@ if (!token) {
   return;
 }
 
-// 봇 초기화
-const bot = new TelegramBot(token, { polling: true });
+// 봇 초기화 (webhook 방식)
+const bot = new TelegramBot(token, { webHook: true });
+const webhookUrl = 'https://mkm-inst-web-907685055657.asia-northeast3.run.app/telegram-webhook';
+bot.setWebHook(webhookUrl);
 
 // 서비스 초기화
 const personaAnalyzer = new PersonaAnalyzer();
@@ -66,6 +68,27 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
+    return;
+  }
+
+  // 텔레그램 웹훅 엔드포인트
+  if (req.url === '/telegram-webhook' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const update = JSON.parse(body);
+        bot.processUpdate(update);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (error) {
+        console.error('❌ 웹훅 처리 오류:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: error.message }));
+      }
+    });
     return;
   }
 
