@@ -8,11 +8,14 @@ const { MessageHandler } = require('./message-handler');
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const googleAIKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const port = process.env.PORT || 8080;
+const nodeEnv = process.env.NODE_ENV || 'development';
 
+console.log('🚀 페르소나 다이어리 텔레그램 봇 v2.0.0 시작');
 console.log('🔧 환경 변수 확인:');
 console.log(`   PORT: ${port}`);
-console.log(`   TELEGRAM_BOT_TOKEN: ${token ? '설정됨' : '설정되지 않음'}`);
-console.log(`   GOOGLE_AI_API_KEY: ${googleAIKey ? '설정됨' : '설정되지 않음'}`);
+console.log(`   NODE_ENV: ${nodeEnv}`);
+console.log(`   TELEGRAM_BOT_TOKEN: ${token ? '✅ 설정됨' : '❌ 설정되지 않음'}`);
+console.log(`   GOOGLE_AI_API_KEY: ${googleAIKey ? '✅ 설정됨' : '❌ 설정되지 않음'}`);
 
 // Google AI API 키 경고
 if (!googleAIKey) {
@@ -181,6 +184,14 @@ bot.on('callback_query', async (callbackQuery) => {
     switch (data) {
       case 'telegram_analysis':
         await messageHandler.showTelegramAnalysisOptions(chatId);
+        break;
+      
+      case 'music_five_elements':
+        await messageHandler.generateFiveElementsMusic(chatId);
+        break;
+      
+      case 'music_gamma_frequency':
+        await messageHandler.generateGammaFrequencyMusic(chatId);
         break;
       
       // 원소 기반 능동적 AI 제안 처리
