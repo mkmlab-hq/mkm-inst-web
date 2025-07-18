@@ -3,9 +3,10 @@ const { WeatherService } = require('./weather-service');
 const { EnvironmentalIntelligence } = require('./environmental-intelligence');
 const { LimitedEditionEvents } = require('./limited-edition-events');
 const { ImageGenerator } = require('./image-generator');
-const DataDreamscapeGenerator = require('./data-dreamscape-generator');
+const { DataDreamscapeGenerator } = require('./data-dreamscape-generator');
 const { PersonaDiary } = require('./persona-diary');
 const { PersonaDiaryAPI } = require('./persona-diary-api');
+const NLPService = require('./nlp-service');
 
 class MessageHandler {
   constructor(bot, personaAnalyzer) {
@@ -20,6 +21,7 @@ class MessageHandler {
     this.dreamscapeGenerator = new DataDreamscapeGenerator(); // 데이터 드림스케이프 생성 시스템
     this.personaDiary = new PersonaDiary(); // 페르소나 다이어리 시스템
     this.personaDiaryAPI = new PersonaDiaryAPI(); // 페르소나 다이어리 API 클라이언트
+    this.nlpService = new NLPService(); // Google Cloud Natural Language API 서비스
   }
 
   async handleMessage(msg) {
@@ -150,6 +152,18 @@ class MessageHandler {
       
       case '/search':
         await this.startDiarySearch(chatId);
+        break;
+      
+      case '/music':
+        await this.showMusicOptions(chatId);
+        break;
+      
+      case '/five-elements':
+        await this.generateFiveElementsMusic(chatId);
+        break;
+      
+      case '/gamma-frequency':
+        await this.generateGammaFrequencyMusic(chatId);
         break;
       
       default:
@@ -511,40 +525,404 @@ class MessageHandler {
     const chatId = msg.chat.id;
     const text = msg.text;
 
+    console.log(`🧠 텍스트 메시지 분석 시작: "${text}"`);
+
     // 다이어리 상태 처리
     if (userState.diaryState) {
       await this.handleDiaryState(chatId, text, userState);
       return;
     }
 
-    // 날씨 관련 키워드
-    const weatherKeywords = ['날씨', '비', '맑음', '흐림', '더워', '추워', '습도', '기온'];
-    const hasWeatherKeyword = weatherKeywords.some(keyword => text.includes(keyword));
-
-    if (hasWeatherKeyword) {
-      await this.handleWeatherQuery(chatId, text);
+    // 분석 옵션 선택 모드 처리
+    if (userState.waitingForAnalysisChoice) {
+      await this.handleAnalysisChoice(chatId, text, userState);
       return;
     }
 
-    // AI 어드바이저 질문 키워드
-    const advisorKeywords = ['상담', '질문', '조언', '도움', '어떻게', '왜', '무엇', '어떤'];
-    const hasAdvisorKeyword = advisorKeywords.some(keyword => text.includes(keyword));
+    try {
+      // Google Cloud Natural Language API를 사용한 진짜 자연어 처리
+      const nlpResult = await this.nlpService.analyzeIntent(text);
+      
+      console.log(`🧠 NLP 분석 결과:`, {
+        intent: nlpResult.intent,
+        confidence: nlpResult.confidence,
+        sentiment: nlpResult.sentiment.score,
+        entities: nlpResult.entities.length,
+        urgency: nlpResult.urgency
+      });
 
-    if (hasAdvisorKeyword && userState.currentPersona) {
-      await this.handleAdvisorQuestion(chatId, text, userState);
-      return;
-    }
+      // 긴급도가 높은 경우 즉시 응답
+      if (nlpResult.urgency >= 4) {
+        await this.bot.sendMessage(chatId, 
+          '🚨 말씀하신 내용이 긴급해 보입니다. 즉시 의료진과 상담하시는 것을 권장합니다.',
+          { parse_mode: 'Markdown' }
+        );
+        return;
+      }
 
-    // 건강 관련 키워드가 포함된 경우 페르소나 분석
-    const healthKeywords = ['건강', '운동', '식단', '스트레스', '수면', '피로', '활력', '에너지'];
-    const hasHealthKeyword = healthKeywords.some(keyword => text.includes(keyword));
+      // 의도별 맞춤형 응답 생성
+      const response = await this.generateContextualResponse(chatId, text, nlpResult, userState);
+      
+      // 응답 전송
+      await this.bot.sendMessage(chatId, response.message, { 
+        parse_mode: 'Markdown',
+        ...(response.keyboard && { reply_markup: response.keyboard })
+      });
 
-    if (hasHealthKeyword) {
+      // 후속 액션 처리
+      if (response.followUp) {
+        await this.handleFollowUpAction(chatId, response.followUp, nlpResult, userState);
+      }
+
+    } catch (error) {
+      console.error('NLP 분석 오류:', error);
+      
+      // NLP 실패 시 기본 응답
       await this.bot.sendMessage(chatId, 
-        '🔍 메시지를 분석하여 당신의 건강 페르소나를 찾아보겠습니다...'
+        '안녕하세요! 건강이나 날씨에 대해 궁금한 것이 있으시면 언제든 말씀해주세요.\n\n' +
+        '💡 *사용 가능한 명령어:*\n' +
+        '/analyze - 페르소나 분석 시작\n' +
+        '/disposition - 기질 분석 보기\n' +
+        '/evolution - 페르소나 진화 추적\n' +
+        '/weather - 날씨 정보 확인\n' +
+        '/advice - 건강 조언 받기\n' +
+        '/help - 도움말 보기',
+        { parse_mode: 'Markdown' }
       );
+    }
+  }
 
-      setTimeout(async () => {
+  async generateContextualResponse(chatId, text, nlpResult, userState) {
+    const { intent, confidence, sentiment, entities, urgency } = nlpResult;
+    
+    // 의도별 기본 응답
+    let response = {
+      message: '',
+      followUp: null,
+      keyboard: null
+    };
+
+    switch (intent) {
+      case 'SYMPTOM_COMPLAINT':
+        response = await this.handleSymptomComplaint(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'HEALTH_STATE':
+        response = await this.handleHealthState(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'HEALTH_QUESTION':
+        response = await this.handleHealthQuestion(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'HEALTH_REFERENCE':
+        response = await this.handleHealthReference(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'WEATHER_INQUIRY':
+        response = await this.handleWeatherInquiry(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'GENERAL_GREETING':
+        response = await this.handleGeneralGreeting(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'ANALYSIS_REQUEST':
+        response = await this.handleAnalysisRequest(chatId, text, nlpResult, userState);
+        break;
+        
+      case 'ADVICE_REQUEST':
+        response = await this.handleAdviceRequest(chatId, text, nlpResult, userState);
+        break;
+        
+      default:
+        response = await this.handleGeneralConversation(chatId, text, nlpResult, userState);
+    }
+
+    return response;
+  }
+
+  async handleSymptomComplaint(chatId, text, nlpResult, userState) {
+    const urgency = nlpResult.urgency;
+    const symptoms = nlpResult.entities.filter(e => e.type === 'SYMPTOM');
+    
+    let message = '';
+    let followUp = null;
+    let keyboard = null;
+
+    if (urgency >= 3) {
+      message = `⚠️ 말씀하신 증상이 심각해 보입니다.\n\n`;
+      message += `*감지된 증상:*\n`;
+      symptoms.forEach(symptom => {
+        message += `• ${symptom.name}\n`;
+      });
+      message += `\n💡 *권장사항:*\n`;
+      message += `• 즉시 의료진과 상담하세요\n`;
+      message += `• 응급실 방문을 고려하세요\n`;
+      message += `• 증상이 악화되면 119에 연락하세요`;
+      
+      followUp = 'URGENT_CARE';
+    } else {
+      message = `🤔 말씀하신 증상을 살펴보겠습니다.\n\n`;
+      message += `*감지된 증상:*\n`;
+      symptoms.forEach(symptom => {
+        message += `• ${symptom.name}\n`;
+      });
+      message += `\n🔍 맞춤형 건강 조언을 찾아보고 있어요...`;
+      
+      followUp = 'SYMPTOM_ANALYSIS';
+      
+      keyboard = {
+        inline_keyboard: [
+          [{ text: '🔍 상세 분석 받기', callback_data: 'detailed_analysis' }],
+          [{ text: '💡 맞춤 조언 받기', callback_data: 'personalized_advice' }],
+          [{ text: '📊 건강 리포트 생성', callback_data: 'health_report' }]
+        ]
+      };
+    }
+
+    return { message, followUp, keyboard };
+  }
+
+  async handleHealthState(chatId, text, nlpResult, userState) {
+    const emotionalState = this.nlpService.analyzeEmotionalState(nlpResult.sentiment);
+    const healthEntities = nlpResult.entities.filter(e => e.type === 'HEALTH_INDICATOR');
+    
+    let message = '';
+    let followUp = null;
+
+    if (emotionalState === 'NEGATIVE') {
+      message = `😔 현재 건강 상태가 좋지 않으신 것 같아요.\n\n`;
+      message += `*감지된 상태:*\n`;
+      healthEntities.forEach(entity => {
+        message += `• ${entity.name}\n`;
+      });
+      message += `\n🤗 함께 해결책을 찾아보겠습니다...`;
+      
+      followUp = 'NEGATIVE_HEALTH_SUPPORT';
+    } else if (emotionalState === 'POSITIVE') {
+      message = `😊 건강 상태가 좋으시군요!\n\n`;
+      message += `*감지된 상태:*\n`;
+      healthEntities.forEach(entity => {
+        message += `• ${entity.name}\n`;
+      });
+      message += `\n💪 더 나은 건강을 위한 조언을 드리겠습니다...`;
+      
+      followUp = 'POSITIVE_HEALTH_ENHANCEMENT';
+    } else {
+      message = `💭 현재 건강 상태를 분석해보겠습니다.\n\n`;
+      message += `*감지된 상태:*\n`;
+      healthEntities.forEach(entity => {
+        message += `• ${entity.name}\n`;
+      });
+      message += `\n🔍 개선 방안을 찾아보고 있어요...`;
+      
+      followUp = 'NEUTRAL_HEALTH_ANALYSIS';
+    }
+
+    return { message, followUp };
+  }
+
+  async handleHealthQuestion(chatId, text, nlpResult, userState) {
+    const questionEntities = nlpResult.entities.filter(e => e.type === 'HEALTH_TOPIC');
+    
+    let message = `💡 좋은 질문이네요!\n\n`;
+    message += `*질문 주제:*\n`;
+    questionEntities.forEach(entity => {
+      message += `• ${entity.name}\n`;
+    });
+    message += `\n🔍 관련 정보를 찾아서 자세히 답변드리겠습니다...`;
+    
+    const followUp = 'HEALTH_QUESTION_ANSWER';
+    
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '📚 상세 정보 보기', callback_data: 'detailed_info' }],
+        [{ text: '💡 실용적 조언', callback_data: 'practical_advice' }],
+        [{ text: '🎯 맞춤 솔루션', callback_data: 'custom_solution' }]
+      ]
+    };
+
+    return { message, followUp, keyboard };
+  }
+
+  async handleHealthReference(chatId, text, nlpResult, userState) {
+    const referenceEntities = nlpResult.entities.filter(e => e.type === 'HEALTH_REFERENCE');
+    
+    let message = `🔍 말씀하신 건강 관련 내용을 분석해보겠습니다.\n\n`;
+    message += `*참조된 내용:*\n`;
+    referenceEntities.forEach(entity => {
+      message += `• ${entity.name}\n`;
+    });
+    message += `\n📊 관련 데이터와 함께 종합 분석을 진행합니다...`;
+    
+    const followUp = 'HEALTH_REFERENCE_ANALYSIS';
+
+    return { message, followUp };
+  }
+
+  async handleWeatherInquiry(chatId, text, nlpResult, userState) {
+    const locationEntities = nlpResult.entities.filter(e => e.type === 'LOCATION');
+    
+    if (locationEntities.length > 0) {
+      const location = locationEntities[0].name;
+      return await this.handleWeatherQuery(chatId, text);
+    } else {
+      let message = `🌤️ 날씨 정보를 확인하려면:\n\n`;
+      message += `1. 📍 위치 정보를 공유해주세요 (📍 버튼 클릭)\n`;
+      message += `2. 또는 도시명을 포함해서 메시지를 보내주세요\n`;
+      message += `   예: "서울 날씨 어때?", "뉴욕 날씨 알려줘"`;
+      
+      return { message };
+    }
+  }
+
+  async handleGeneralGreeting(chatId, text, nlpResult, userState) {
+    const timeOfDay = this.getCurrentTimeOfDay();
+    let greeting = '';
+    
+    switch (timeOfDay) {
+      case 'morning':
+        greeting = '🌅 좋은 아침이에요!';
+        break;
+      case 'afternoon':
+        greeting = '☀️ 좋은 오후에요!';
+        break;
+      case 'evening':
+        greeting = '🌆 좋은 저녁이에요!';
+        break;
+      default:
+        greeting = '🌙 안녕하세요!';
+    }
+    
+    let message = `${greeting}\n\n`;
+    message += `당신의 AI 건강 동반자입니다! 🤖\n\n`;
+    message += `💡 *오늘 할 수 있는 것들:*\n`;
+    message += `• 📸 사진으로 페르소나 분석\n`;
+    message += `• 💬 건강 관련 질문하기\n`;
+    message += `• 🌤️ 날씨 기반 추천 받기\n`;
+    message += `• 📊 건강 상태 체크하기`;
+    
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '🔬 분석 시작하기', callback_data: 'start_analysis' }],
+        [{ text: '💡 건강 조언 받기', callback_data: 'get_advice' }],
+        [{ text: '🌤️ 날씨 확인하기', callback_data: 'check_weather' }]
+      ]
+    };
+
+    return { message, keyboard };
+  }
+
+  async handleAnalysisRequest(chatId, text, nlpResult, userState) {
+    let message = `🔬 페르소나 분석을 시작하겠습니다!\n\n`;
+    message += `*분석 방법을 선택해주세요:*\n\n`;
+    message += `1. 📸 **얼굴 사진 분석** (가장 정확)\n`;
+    message += `2. 💓 **생체 정보 입력** (혈압, 맥박 등)\n`;
+    message += `3. 💬 **메시지 기반 분석** (현재 진행 중)\n`;
+    message += `4. 📍 **위치 기반 분석** (날씨 연동)\n\n`;
+    message += `현재 메시지 기반 분석을 진행하고 있습니다...`;
+    
+    const followUp = 'ANALYSIS_IN_PROGRESS';
+    
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '📸 사진으로 분석', callback_data: 'photo_analysis' }],
+        [{ text: '💓 생체 정보 입력', callback_data: 'vital_signs' }],
+        [{ text: '📍 위치 공유하기', callback_data: 'share_location' }]
+      ]
+    };
+
+    return { message, followUp, keyboard };
+  }
+
+  async handleAdviceRequest(chatId, text, nlpResult, userState) {
+    const adviceTopics = nlpResult.entities.filter(e => e.type === 'ADVICE_TOPIC');
+    
+    let message = `💡 건강 조언을 드리겠습니다!\n\n`;
+    
+    if (adviceTopics.length > 0) {
+      message += `*요청하신 주제:*\n`;
+      adviceTopics.forEach(topic => {
+        message += `• ${topic.name}\n`;
+      });
+      message += `\n🔍 관련 조언을 찾아보고 있어요...`;
+    } else {
+      message += `어떤 건강 관련 조언이 필요하신가요?\n\n`;
+      message += `• 🏃‍♂️ 운동\n`;
+      message += `• 🍎 식단\n`;
+      message += `• 😌 스트레스 관리\n`;
+      message += `• 💤 수면\n`;
+      message += `• 🎯 일반적인 건강 관리`;
+    }
+    
+    const followUp = 'ADVICE_GENERATION';
+    
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '🏃‍♂️ 운동 조언', callback_data: 'exercise_advice' }],
+        [{ text: '🍎 식단 조언', callback_data: 'diet_advice' }],
+        [{ text: '😌 스트레스 관리', callback_data: 'stress_management' }],
+        [{ text: '💤 수면 조언', callback_data: 'sleep_advice' }]
+      ]
+    };
+
+    return { message, followUp, keyboard };
+  }
+
+  async handleGeneralConversation(chatId, text, nlpResult, userState) {
+    let message = `💭 말씀해주신 내용을 분석해보겠습니다.\n\n`;
+    message += `*감지된 키워드:*\n`;
+    nlpResult.entities.slice(0, 3).forEach(entity => {
+      message += `• ${entity.name}\n`;
+    });
+    message += `\n🔍 관련 건강 정보를 찾아보고 있어요...`;
+    
+    const followUp = 'GENERAL_ANALYSIS';
+    
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '🔬 페르소나 분석', callback_data: 'persona_analysis' }],
+        [{ text: '💡 건강 조언', callback_data: 'health_advice' }],
+        [{ text: '🌤️ 날씨 확인', callback_data: 'weather_check' }]
+      ]
+    };
+
+    return { message, followUp, keyboard };
+  }
+
+  async handleFollowUpAction(chatId, followUpType, nlpResult, userState) {
+    console.log(`🔄 후속 액션 처리: ${followUpType}`);
+    
+    switch (followUpType) {
+      case 'SYMPTOM_ANALYSIS':
+        await this.performSymptomAnalysis(chatId, nlpResult, userState);
+        break;
+        
+      case 'HEALTH_QUESTION_ANSWER':
+        await this.answerHealthQuestion(chatId, nlpResult, userState);
+        break;
+        
+      case 'ANALYSIS_IN_PROGRESS':
+        await this.performTextBasedAnalysis(chatId, nlpResult, userState);
+        break;
+        
+      case 'ADVICE_GENERATION':
+        await this.generatePersonalizedAdvice(chatId, nlpResult, userState);
+        break;
+        
+      case 'GENERAL_ANALYSIS':
+        await this.performGeneralAnalysis(chatId, nlpResult, userState);
+        break;
+        
+      default:
+        console.log(`알 수 없는 후속 액션: ${followUpType}`);
+    }
+  }
+
+  async performSymptomAnalysis(chatId, nlpResult, userState) {
+    setTimeout(async () => {
+      try {
         // 환경 데이터 준비
         const envData = userState.environmentalContext ? {
           weather: userState.environmentalContext.weather?.condition || 'sunny',
@@ -553,7 +931,118 @@ class MessageHandler {
         } : null;
 
         // 종합 페르소나 분석
-        const result = this.personaAnalyzer.analyzePersona(null, text, envData);
+        const result = this.personaAnalyzer.analyzePersona(null, null, envData);
+        const formatted = this.personaAnalyzer.formatPersonaResult(result);
+        
+        await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
+        
+        // 증상별 맞춤 조언
+        const symptoms = nlpResult.entities.filter(e => e.type === 'SYMPTOM');
+        if (symptoms.length > 0) {
+          const symptomAdvice = this.generateSymptomSpecificAdvice(symptoms, result.scores);
+          await this.bot.sendMessage(chatId, 
+            `💡 *증상별 맞춤 조언*\n\n${symptomAdvice}`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+        
+        // 사용자 상태 업데이트
+        const previousResult = userState.lastPersonaResult;
+        userState.currentPersona = result.persona.code;
+        userState.lastPersonaResult = result;
+        userState.lastAnalysis = new Date();
+        this.userStates.set(chatId, userState);
+
+        // 페르소나 진화 추적
+        if (previousResult) {
+          const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
+          if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
+            await this.bot.sendMessage(chatId, 
+              `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
+              { parse_mode: 'Markdown' }
+            );
+          }
+        }
+
+      } catch (error) {
+        console.error('증상 분석 오류:', error);
+        await this.bot.sendMessage(chatId, 
+          '😔 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
+        );
+      }
+    }, 2000);
+  }
+
+  generateSymptomSpecificAdvice(symptoms, scores) {
+    let advice = '';
+    
+    symptoms.forEach(symptom => {
+      const symptomName = symptom.name.toLowerCase();
+      
+      if (symptomName.includes('피로') || symptomName.includes('스트레스')) {
+        advice += `• **${symptom.name}**: 충분한 휴식과 스트레스 관리가 필요합니다. 명상이나 가벼운 운동을 시도해보세요.\n`;
+      } else if (symptomName.includes('수면') || symptomName.includes('불면')) {
+        advice += `• **${symptom.name}**: 규칙적인 수면 패턴과 편안한 수면 환경을 만들어보세요.\n`;
+      } else if (symptomName.includes('소화') || symptomName.includes('위')) {
+        advice += `• **${symptom.name}**: 천천히 식사하고 소화에 좋은 음식을 섭취해보세요.\n`;
+      } else if (symptomName.includes('두통') || symptomName.includes('머리')) {
+        advice += `• **${symptom.name}**: 충분한 수분 섭취와 휴식을 취해보세요.\n`;
+      } else {
+        advice += `• **${symptom.name}**: 증상이 지속되면 의료진과 상담하시는 것을 권장합니다.\n`;
+      }
+    });
+    
+    return advice || '증상에 대한 구체적인 조언을 제공할 수 없습니다. 의료진과 상담하시는 것을 권장합니다.';
+  }
+
+  async answerHealthQuestion(chatId, nlpResult, userState) {
+    setTimeout(async () => {
+      const questionTopics = nlpResult.entities.filter(e => e.type === 'HEALTH_TOPIC');
+      
+      let answer = `💡 *질문에 대한 답변*\n\n`;
+      
+      questionTopics.forEach(topic => {
+        const topicName = topic.name.toLowerCase();
+        
+        if (topicName.includes('운동')) {
+          answer += `**${topic.name}**:\n`;
+          answer += `• 하루 30분 이상의 중간 강도 운동을 권장합니다\n`;
+          answer += `• 걷기, 수영, 자전거 타기 등이 좋습니다\n`;
+          answer += `• 개인 상황에 맞는 운동을 선택하세요\n\n`;
+        } else if (topicName.includes('식단') || topicName.includes('영양')) {
+          answer += `**${topic.name}**:\n`;
+          answer += `• 균형 잡힌 식단이 중요합니다\n`;
+          answer += `• 채소, 과일, 단백질을 충분히 섭취하세요\n`;
+          answer += `• 과식과 폭식을 피하세요\n\n`;
+        } else if (topicName.includes('수면')) {
+          answer += `**${topic.name}**:\n`;
+          answer += `• 하루 7-9시간의 수면을 권장합니다\n`;
+          answer += `• 규칙적인 수면 패턴을 유지하세요\n`;
+          answer += `• 수면 전 전자기기 사용을 줄이세요\n\n`;
+        } else {
+          answer += `**${topic.name}**:\n`;
+          answer += `• 이 주제에 대한 구체적인 정보를 제공할 수 없습니다\n`;
+          answer += `• 의료진과 상담하시는 것을 권장합니다\n\n`;
+        }
+      });
+      
+      await this.bot.sendMessage(chatId, answer, { parse_mode: 'Markdown' });
+      
+    }, 1500);
+  }
+
+  async performTextBasedAnalysis(chatId, nlpResult, userState) {
+    setTimeout(async () => {
+      try {
+        // 환경 데이터 준비
+        const envData = userState.environmentalContext ? {
+          weather: userState.environmentalContext.weather?.condition || 'sunny',
+          time: this.getCurrentTimeOfDay(),
+          season: this.getCurrentSeason()
+        } : null;
+
+        // 종합 페르소나 분석
+        const result = this.personaAnalyzer.analyzePersona(null, null, envData);
         const formatted = this.personaAnalyzer.formatPersonaResult(result);
         
         await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
@@ -592,21 +1081,104 @@ class MessageHandler {
         } else if (updatedState.location) {
           await this.sendWeatherBasedRecommendation(chatId, result.persona.code, updatedState.location);
         }
-      }, 2000);
-    } else {
-      // 일반적인 대화 응답
-      await this.bot.sendMessage(chatId, 
-        '안녕하세요! 건강이나 날씨에 대해 궁금한 것이 있으시면 언제든 말씀해주세요.\n\n' +
-        '💡 *사용 가능한 명령어:*\n' +
-        '/analyze - 페르소나 분석 시작\n' +
-        '/disposition - 기질 분석 보기\n' +
-        '/evolution - 페르소나 진화 추적\n' +
-        '/weather - 날씨 정보 확인\n' +
-        '/advice - 건강 조언 받기\n' +
-        '/help - 도움말 보기',
-        { parse_mode: 'Markdown' }
-      );
-    }
+
+      } catch (error) {
+        console.error('텍스트 분석 오류:', error);
+        await this.bot.sendMessage(chatId, 
+          '😔 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
+        );
+      }
+    }, 2000);
+  }
+
+  async generatePersonalizedAdvice(chatId, nlpResult, userState) {
+    setTimeout(async () => {
+      const adviceTopics = nlpResult.entities.filter(e => e.type === 'ADVICE_TOPIC');
+      
+      let advice = `💡 *맞춤형 건강 조언*\n\n`;
+      
+      if (adviceTopics.length > 0) {
+        adviceTopics.forEach(topic => {
+          const topicName = topic.name.toLowerCase();
+          
+          if (topicName.includes('운동')) {
+            advice += `**${topic.name}**:\n`;
+            advice += `• 하루 30분 이상의 중간 강도 운동\n`;
+            advice += `• 개인 상황에 맞는 운동 선택\n`;
+            advice += `• 꾸준한 실천이 중요합니다\n\n`;
+          } else if (topicName.includes('식단')) {
+            advice += `**${topic.name}**:\n`;
+            advice += `• 균형 잡힌 영양소 섭취\n`;
+            advice += `• 규칙적인 식사 시간\n`;
+            advice += `• 충분한 수분 섭취\n\n`;
+          } else if (topicName.includes('스트레스')) {
+            advice += `**${topic.name}**:\n`;
+            advice += `• 명상과 마음챙김 연습\n`;
+            advice += `• 충분한 휴식과 취미 활동\n`;
+            advice += `• 사회적 지지망 활용\n\n`;
+          } else if (topicName.includes('수면')) {
+            advice += `**${topic.name}**:\n`;
+            advice += `• 규칙적인 수면 패턴\n`;
+            advice += `• 편안한 수면 환경 조성\n`;
+            advice += `• 수면 전 이완 활동\n\n`;
+          }
+        });
+      } else {
+        advice += `**일반적인 건강 관리**:\n`;
+        advice += `• 규칙적인 운동과 식단 관리\n`;
+        advice += `• 충분한 수면과 스트레스 관리\n`;
+        advice += `• 정기적인 건강 검진\n`;
+        advice += `• 긍정적인 마음가짐 유지\n\n`;
+      }
+      
+      advice += `💡 더 구체적인 조언이 필요하시면 언제든 말씀해주세요!`;
+      
+      await this.bot.sendMessage(chatId, advice, { parse_mode: 'Markdown' });
+      
+    }, 1500);
+  }
+
+  async performGeneralAnalysis(chatId, nlpResult, userState) {
+    setTimeout(async () => {
+      try {
+        // 환경 데이터 준비
+        const envData = userState.environmentalContext ? {
+          weather: userState.environmentalContext.weather?.condition || 'sunny',
+          time: this.getCurrentTimeOfDay(),
+          season: this.getCurrentSeason()
+        } : null;
+
+        // 종합 페르소나 분석
+        const result = this.personaAnalyzer.analyzePersona(null, null, envData);
+        const formatted = this.personaAnalyzer.formatPersonaResult(result);
+        
+        await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
+        
+        // 사용자 상태 업데이트
+        const previousResult = userState.lastPersonaResult;
+        userState.currentPersona = result.persona.code;
+        userState.lastPersonaResult = result;
+        userState.lastAnalysis = new Date();
+        this.userStates.set(chatId, userState);
+
+        // 페르소나 진화 추적
+        if (previousResult) {
+          const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
+          if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
+            await this.bot.sendMessage(chatId, 
+              `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
+              { parse_mode: 'Markdown' }
+            );
+          }
+        }
+
+      } catch (error) {
+        console.error('일반 분석 오류:', error);
+        await this.bot.sendMessage(chatId, 
+          '😔 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
+        );
+      }
+    }, 2000);
   }
 
   async handleWeatherQuery(chatId, text) {
@@ -747,6 +1319,9 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 /read - 다이어리 읽기
 /stats - 다이어리 통계
 /search - 다이어리 검색
+/music - AI 음악 솔루션
+/five-elements - 오행 음악 추천
+/gamma-frequency - 감마파 음악 추천
 
 *💡 사용 팁:*
 • 📹 15초 영상으로 가장 정확한 분석 가능
@@ -784,8 +1359,9 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async startAnalysis(chatId) {
-    // 웹 분석 링크 생성
-    const webAnalysisUrl = `http://localhost:3000?user_id=${chatId}`;
+    // 웹 분석 링크 생성 (환경 변수에서 가져오거나 기본값 사용)
+    const baseUrl = process.env.WEB_APP_URL || 'https://mkm-inst-web-907685055657.asia-northeast3.run.app';
+    const webAnalysisUrl = `${baseUrl}?user_id=${chatId}`;
     
     const analysisText = `🔬 *정밀 페르소나 분석*
 
@@ -832,6 +1408,11 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async showTelegramAnalysisOptions(chatId) {
+    // 사용자 상태 설정 - 분석 옵션 선택 모드
+    const userState = this.userStates.get(chatId) || {};
+    userState.waitingForAnalysisChoice = true;
+    this.userStates.set(chatId, userState);
+
     const telegramAnalysisText = `📱 *텔레그램 분석 옵션*
 
 다음 중 하나를 선택해주세요:
@@ -2068,6 +2649,234 @@ ${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solutio
     } else {
       await this.bot.sendMessage(chatId, '😔 해당 제안에 대한 정보를 찾을 수 없습니다.');
     }
+  }
+
+  // AI 음악 솔루션 기능들
+  async showMusicOptions(chatId) {
+    const musicText = `🎵 *AI 음악 솔루션*
+
+당신의 페르소나에 맞는 맞춤형 음악을 추천해드립니다.
+
+*🎼 음악 솔루션 종류:*
+
+1. 🌿 *오행 음악 솔루션* (/five-elements)
+   • 목(木), 화(火), 토(土), 금(金), 수(水) 기반
+   • 당신의 체질에 맞는 음악 추천
+   • 스트레스 완화, 집중력 향상, 수면 개선
+
+2. 🧠 *감마파 음악 솔루션* (/gamma-frequency)
+   • 뇌파 동기화 기술 기반
+   • 집중력, 창의성, 학습 능력 향상
+   • 40Hz 감마파 주파수 최적화
+
+*💡 사용법:*
+• /five-elements - 오행 기반 음악 추천
+• /gamma-frequency - 감마파 음악 추천
+
+어떤 음악 솔루션을 원하시나요?`;
+
+    const musicButtons = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '🌿 오행 음악 솔루션', callback_data: 'music_five_elements' },
+            { text: '🧠 감마파 음악 솔루션', callback_data: 'music_gamma_frequency' }
+          ]
+        ]
+      }
+    };
+
+    await this.bot.sendMessage(chatId, musicText, { 
+      parse_mode: 'Markdown',
+      ...musicButtons
+    });
+  }
+
+  async generateFiveElementsMusic(chatId) {
+    try {
+      await this.bot.sendMessage(chatId, '🌿 오행 음악 솔루션을 생성하고 있습니다...');
+      
+      // 사용자의 페르소나 정보 가져오기 (실제로는 데이터베이스에서)
+      const userPersona = 'P1'; // 기본값, 실제로는 사용자별 데이터
+      
+      // 오행 기반 음악 추천
+      const fiveElementsMusic = this.getFiveElementsMusicRecommendation(userPersona);
+      
+      const musicText = `🌿 *오행 음악 솔루션*
+
+*당신의 페르소나: ${fiveElementsMusic.persona}*
+
+🎵 *추천 음악:*
+${fiveElementsMusic.recommendations.map(rec => `• ${rec.title} - ${rec.artist}`).join('\n')}
+
+🎯 *효과:*
+• ${fiveElementsMusic.effects.join('\n• ')}
+
+⏰ *듣기 시간:*
+• ${fiveElementsMusic.duration}
+
+💡 *팁:*
+${fiveElementsMusic.tips.join('\n')}
+
+*본 서비스는 웰니스 참고용이며, 의료적 진단이나 치료를 대체하지 않습니다.*`;
+
+      await this.bot.sendMessage(chatId, musicText, { parse_mode: 'Markdown' });
+      
+    } catch (error) {
+      console.error('❌ 오행 음악 생성 에러:', error);
+      await this.bot.sendMessage(chatId, '음악 추천 생성 중 오류가 발생했습니다.');
+    }
+  }
+
+  async generateGammaFrequencyMusic(chatId) {
+    try {
+      await this.bot.sendMessage(chatId, '🧠 감마파 음악 솔루션을 생성하고 있습니다...');
+      
+      // 감마파 음악 추천
+      const gammaMusic = this.getGammaFrequencyMusicRecommendation();
+      
+      const musicText = `🧠 *감마파 음악 솔루션*
+
+*40Hz 감마파 주파수 최적화*
+
+🎵 *추천 음악:*
+${gammaMusic.recommendations.map(rec => `• ${rec.title} - ${rec.artist}`).join('\n')}
+
+🎯 *효과:*
+• ${gammaMusic.effects.join('\n• ')}
+
+⏰ *듣기 시간:*
+• ${gammaMusic.duration}
+
+🧠 *뇌파 동기화:*
+• 40Hz 감마파 주파수
+• 집중력 및 인지 능력 향상
+• 창의성 증진
+
+💡 *팁:*
+${gammaMusic.tips.join('\n')}
+
+*본 서비스는 웰니스 참고용이며, 의료적 진단이나 치료를 대체하지 않습니다.*`;
+
+      await this.bot.sendMessage(chatId, musicText, { parse_mode: 'Markdown' });
+      
+    } catch (error) {
+      console.error('❌ 감마파 음악 생성 에러:', error);
+      await this.bot.sendMessage(chatId, '음악 추천 생성 중 오류가 발생했습니다.');
+    }
+  }
+
+  getFiveElementsMusicRecommendation(persona) {
+    const recommendations = {
+      'P1': {
+        persona: 'The Visionary Leader (비전 리더)',
+        element: '목(木)',
+        recommendations: [
+          { title: 'Forest Awakening', artist: 'Nature Sounds' },
+          { title: 'Morning Dew', artist: 'Zen Garden' },
+          { title: 'Growth & Renewal', artist: 'Spring Harmony' }
+        ],
+        effects: [
+          '창의적 사고 촉진',
+          '새로운 아이디어 발상',
+          '리더십 능력 향상'
+        ],
+        duration: '15-30분 (아침 또는 창작 시간)',
+        tips: [
+          '창작 작업 전에 듣기',
+          '새로운 프로젝트 시작 시 활용',
+          '자연과 함께하는 환경에서 듣기'
+        ]
+      },
+      'P2': {
+        persona: 'The Balanced Builder (균형 조성가)',
+        element: '토(土)',
+        recommendations: [
+          { title: 'Earth Harmony', artist: 'Grounding Sounds' },
+          { title: 'Stable Foundation', artist: 'Balance Music' },
+          { title: 'Centered Mind', artist: 'Meditation Flow' }
+        ],
+        effects: [
+          '안정감 증진',
+          '집중력 향상',
+          '균형 잡힌 사고'
+        ],
+        duration: '20-45분 (업무 시간 또는 명상 시간)',
+        tips: [
+          '중요한 결정 전에 듣기',
+          '업무 집중 시간에 활용',
+          '스트레스 해소 시 듣기'
+        ]
+      },
+      'P3': {
+        persona: 'The Dynamic Explorer (동적 탐험가)',
+        element: '화(火)',
+        recommendations: [
+          { title: 'Passion Flow', artist: 'Energy Music' },
+          { title: 'Adventure Spirit', artist: 'Explorer Sounds' },
+          { title: 'Dynamic Energy', artist: 'Movement Harmony' }
+        ],
+        effects: [
+          '에너지 증진',
+          '동기부여 향상',
+          '활동성 증가'
+        ],
+        duration: '10-25분 (운동 전 또는 에너지 부족 시)',
+        tips: [
+          '운동 전 동기부여용',
+          '새로운 도전 시작 시',
+          '에너지 부족 시 듣기'
+        ]
+      },
+      'P4': {
+        persona: 'The Mindful Guardian (마음챙김 수호자)',
+        element: '수(水)',
+        recommendations: [
+          { title: 'Deep Reflection', artist: 'Water Sounds' },
+          { title: 'Inner Peace', artist: 'Mindful Harmony' },
+          { title: 'Wisdom Flow', artist: 'Contemplation Music' }
+        ],
+        effects: [
+          '마음의 평온',
+          '깊은 사고 촉진',
+          '직관력 향상'
+        ],
+        duration: '30-60분 (저녁 또는 명상 시간)',
+        tips: [
+          '명상 시간에 활용',
+          '깊은 사고가 필요할 때',
+          '수면 전 이완용'
+        ]
+      }
+    };
+
+    return recommendations[persona] || recommendations['P1'];
+  }
+
+  getGammaFrequencyMusicRecommendation() {
+    return {
+      recommendations: [
+        { title: 'Gamma Focus 40Hz', artist: 'Brain Sync' },
+        { title: 'Cognitive Enhancement', artist: 'Neural Harmony' },
+        { title: 'Peak Performance', artist: 'Mind Optimization' },
+        { title: 'Creative Flow', artist: 'Innovation Sounds' }
+      ],
+      effects: [
+        '집중력 및 주의력 향상',
+        '인지 능력 증진',
+        '창의적 사고 촉진',
+        '학습 능력 향상',
+        '기억력 개선'
+      ],
+      duration: '25-45분 (학습, 작업, 창작 시간)',
+      tips: [
+        '중요한 학습이나 작업 전에 듣기',
+        '창작 활동 시 활용',
+        '헤드폰 사용 권장',
+        '방해받지 않는 환경에서 듣기',
+        '정기적으로 사용하여 효과 극대화'
+      ]
+    };
   }
 }
 

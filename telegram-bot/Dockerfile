@@ -18,7 +18,7 @@ EXPOSE 8080
 
 # 환경변수 설정
 ENV NODE_ENV=production
-ENV PORT=8080
+# Cloud Run이 PORT 환경변수를 자동으로 설정하므로 여기서는 설정하지 않음
 
 # 헬스체크 추가
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
