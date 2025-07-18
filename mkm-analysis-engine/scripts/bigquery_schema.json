@@ -118,5 +118,260 @@
     "name": "vector_dimension",
     "type": "INTEGER",
     "mode": "NULLABLE"
+  },
+  {
+    "name": "molecular_formula",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "molecular_weight",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "chemical_structure",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "smiles_notation",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "inchi_key",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cas_number",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "pubchem_cid",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "chebi_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "molecular_properties",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "solubility",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "melting_point",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "boiling_point",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "logp",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "pka",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "bioavailability",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "toxicity_data",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "drug_likeness",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "target_proteins",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "pathway_involvement",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "clinical_phase",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "mechanism_of_action",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "side_effects",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "drug_interactions",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "metabolism_pathway",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "excretion_route",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "half_life",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "clearance_rate",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "volume_of_distribution",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "protein_binding",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "genetic_variants",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "biomarker_associations",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "epigenetic_effects",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cellular_pathways",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "molecular_interactions",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "crystal_structure",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "spectroscopic_data",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "computational_prediction",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "synthesis_method",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "yield_percentage",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "purity_grade",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "stability_data",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "storage_conditions",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "regulatory_status",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "patent_information",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "manufacturing_process",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "quality_control",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cost_analysis",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "market_availability",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "research_priority",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "collaboration_opportunities",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "future_directions",
+    "type": "STRING",
+    "mode": "NULLABLE"
   }
 ]
