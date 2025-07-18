@@ -1,6 +1,6 @@
-fastapi
-uvicorn[standard]
-parselmouth
+# fastapi
+# uvicorn[standard]
+# parselmouth       # 음성 분석, jitter/shimmer (임시 비활성화)
 librosa
 opencv-python
 numpy
