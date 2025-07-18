@@ -1,0 +1,122 @@
+[
+  {
+    "name": "source_type",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "source_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "title",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "summary",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "content",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "url",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "published_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "entities",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "keywords",
+    "type": "STRING",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "vector",
+    "type": "FLOAT",
+    "mode": "REPEATED"
+  },
+  {
+    "name": "nct_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "phase",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "status",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "sponsor",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "funding_round",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "funding_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "company_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "stars",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "forks",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "language",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "owner",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "arxiv_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "processed_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "vector_dimension",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+  }
+]

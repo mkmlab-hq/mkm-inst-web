@@ -1,0 +1,732 @@
+/* MKM Lab - 페르소나 다이어리 스타일 */
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  font-size: 1.1rem;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.introSection {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.introSection h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.introSection p {
+  font-size: 1.1rem;
+  color: #b0b0b0;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.personaSelection {
+  margin-bottom: 3rem;
+}
+
+.personaSelection h3 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+}
+
+.personaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.personaCard {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid transparent;
+  border-radius: 15px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.personaCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.personaCard.selected {
+  border-color: currentColor;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.personaBadge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.personaCard h4 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.personaCard p {
+  color: #b0b0b0;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.characteristics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.characteristic {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  color: #ffffff;
+}
+
+.musicStyle, .therapeuticFocus {
+  margin-top: 0.8rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.musicStyle strong, .therapeuticFocus strong {
+  color: #667eea;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.meditationSection {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.selectedPersona {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+}
+
+.selectedPersona h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.selectedPersona p {
+  color: #b0b0b0;
+  font-size: 1rem;
+}
+
+.personaDetails {
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.personaDetails p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.moodInput, .insightInput {
+  margin-bottom: 1.5rem;
+}
+
+.moodInput label, .insightInput label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.moodInput input, .insightInput input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.moodInput input::placeholder, .insightInput input::placeholder {
+  color: #808080;
+}
+
+.insightInputGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.insightInputGroup input {
+  flex: 1;
+}
+
+.insightInputGroup button {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.insightInputGroup button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.insightsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.insightTag {
+  background: rgba(102, 126, 234, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.5);
+}
+
+.startButton {
+  width: 100%;
+  padding: 1.2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.startButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* 명상 화면 스타일 */
+.meditationContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.meditationContent {
+  text-align: center;
+  max-width: 600px;
+  padding: 2rem;
+}
+
+.meditationTimer {
+  margin-bottom: 3rem;
+}
+
+.timerCircle {
+  width: 200px;
+  height: 200px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.timerText {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.meditationGuidance h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.meditationGuidance p {
+  font-size: 1.1rem;
+  color: #b0b0b0;
+  margin-bottom: 0.5rem;
+}
+
+.musicInfo {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.musicIcon {
+  font-size: 1.2rem;
+}
+
+.musicError {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
+.breathingGuide {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.breathIn, .breathOut {
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-weight: 500;
+  animation: breathe 4s infinite;
+}
+
+.breathIn {
+  background: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}
+
+.breathOut {
+  background: rgba(33, 150, 243, 0.3);
+  color: #2196f3;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.musicControls {
+  margin-top: 2rem;
+}
+
+.musicButton {
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.musicButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.musicPlayer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+}
+
+.musicPlayer h3 {
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.solutionMusicGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.solutionMusicCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.solutionMusicCard:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.solutionMusicCard h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.solutionMusicCard p {
+  font-size: 0.85rem;
+  color: #b0b0b0;
+  margin-bottom: 0.8rem;
+}
+
+.benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.benefit {
+  background: rgba(102, 126, 234, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: #ffffff;
+}
+
+.stopMusicButton {
+  width: 100%;
+  padding: 0.8rem;
+  background: rgba(255, 107, 107, 0.3);
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stopMusicButton:hover {
+  background: rgba(255, 107, 107, 0.4);
+}
+
+/* 결과 화면 스타일 */
+.resultContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.resultCard {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.resultCard h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+}
+
+.personaResult {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+}
+
+.personaResult h3 {
+  font-size: 1.5rem;
+  margin: 1rem 0 0.5rem 0;
+  color: #ffffff;
+}
+
+.personaResult p {
+  color: #b0b0b0;
+  font-size: 1.1rem;
+}
+
+.resultDetails {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.resultItem {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.resultItem strong {
+  color: #667eea;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.resultItem ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.resultItem li {
+  color: #b0b0b0;
+  margin-bottom: 0.3rem;
+}
+
+.nftButton {
+  width: 100%;
+  padding: 1.2rem;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.nftButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+}
+
+.nftSuccess {
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.nftSuccess h3 {
+  color: #4caf50;
+  margin-bottom: 1rem;
+}
+
+.nftSuccess p {
+  color: #b0b0b0;
+  line-height: 1.6;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.secondaryButton {
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.secondaryButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 히스토리 섹션 */
+.historySection {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.historySection h3 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+}
+
+.historyList {
+  display: grid;
+  gap: 1rem;
+}
+
+.historyItem {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.historyItem:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.historyDate {
+  color: #808080;
+  font-size: 0.9rem;
+}
+
+.historyPersona {
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.historyItem p {
+  color: #ffffff;
+  margin: 0.3rem 0;
+  font-weight: 500;
+}
+
+.historyMood, .historyMusic {
+  color: #b0b0b0 !important;
+  font-size: 0.9rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .personaGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .timerCircle {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .timerText {
+    font-size: 3rem;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+  }
+  
+  .secondaryButton {
+    min-width: auto;
+  }
+  
+  .breathingGuide {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .solutionMusicGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 1rem;
+  }
+  
+  .introSection, .meditationSection, .historySection {
+    padding: 1.5rem;
+  }
+  
+  .personaCard {
+    padding: 1rem;
+  }
+  
+  .resultCard {
+    padding: 1.5rem;
+  }
+} 

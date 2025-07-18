@@ -1,0 +1,30 @@
+{
+  "name": "persona-diary-bot",
+  "version": "1.0.0",
+  "description": "페르소나 다이어리 텔레그램 봇 - Your Hyper-Personalized AI Health Advisor",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "health",
+    "ai",
+    "persona"
+  ],
+  "author": "MKM Lab",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.6.1",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "total_items": 100,
+  "source_type_distribution": {
+    "github": 60,
+    "research_paper": 40
+  },
+  "source_name_distribution": {
+    "GitHub": 60,
+    "arXiv": 40
+  },
+  "processing_date": "2025-07-13T23:53:12.883209",
+  "vector_dimension": 384
+}
