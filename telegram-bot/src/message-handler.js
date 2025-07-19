@@ -1,9 +1,5 @@
 // 텔레그램 메시지 핸들러
 const { WeatherService } = require('./weather-service');
-const { EnvironmentalIntelligence } = require('./environmental-intelligence');
-const { LimitedEditionEvents } = require('./limited-edition-events');
-const { ImageGenerator } = require('./image-generator');
-const { DataDreamscapeGenerator } = require('./data-dreamscape-generator');
 const { PersonaDiary } = require('./persona-diary');
 const { PersonaDiaryAPI } = require('./persona-diary-api');
 const NLPService = require('./nlp-service');
@@ -13,12 +9,7 @@ class MessageHandler {
     this.bot = bot;
     this.personaAnalyzer = personaAnalyzer;
     this.weatherService = new WeatherService();
-    this.environmentalIntelligence = new EnvironmentalIntelligence();
-    this.environmentalIntelligence.setWeatherService(this.weatherService);
     this.userStates = new Map(); // 사용자 상태 관리
-    this.limitedEditionEvents = new LimitedEditionEvents(); // 한정판 이벤트 시스템
-    this.imageGenerator = new ImageGenerator(); // AI 이미지 생성 시스템
-    this.dreamscapeGenerator = new DataDreamscapeGenerator(); // 데이터 드림스케이프 생성 시스템
     this.personaDiary = new PersonaDiary(); // 페르소나 다이어리 시스템
     this.personaDiaryAPI = new PersonaDiaryAPI(); // 페르소나 다이어리 API 클라이언트
     this.nlpService = new NLPService(); // Google Cloud Natural Language API 서비스
@@ -94,6 +85,8 @@ class MessageHandler {
         await this.showAdviceOptions(chatId);
         break;
       
+      // MVP 외 기능들 - 주석 처리
+      /*
       case '/environment':
         await this.showEnvironmentOptions(chatId);
         break;
@@ -165,6 +158,7 @@ class MessageHandler {
       case '/gamma-frequency':
         await this.generateGammaFrequencyMusic(chatId);
         break;
+      */
       
       default:
         await this.bot.sendMessage(chatId, 
@@ -1286,72 +1280,36 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendHelpMessage(chatId) {
-    const helpText = `📚 *페르소나 다이어리 도움말*
+    const helpText = `🤖 *페르소나 다이어리 봇 MVP 도움말*
 
-*🎭 분석 방법:*
-📹 **영상 분석** (추천) - 15초 영상을 보내면 rPPG 기술로 생체 신호 분석
-📸 **사진 분석** - 얼굴 사진을 보내면 AI가 특징 분석
-🎤 **음성 분석** - 음성 메시지를 보내면 음성 패턴 분석
-💬 **텍스트 분석** - 건강 관련 메시지를 보내면 텍스트 기반 분석
-
-*🤖 AI 어드바이저:*
-분석 후 "상담하기", "질문하기", "조언" 등의 키워드로 AI 어드바이저와 상담 가능
-
-*📋 명령어 목록:*
-/start - 시작 메시지
-/help - 이 도움말 보기
+*기본 명령어:*
+/start - 봇 시작 및 환영 메시지
+/help - 이 도움말 메시지 표시
 /analyze - 페르소나 분석 시작
-/weather - 날씨 정보 확인
-/persona - 페르소나 정보 보기
-/advice - 건강 조언 받기
-/environment - 환경 기반 추천
-/events - 한정판 이벤트 보기
-/event - 이벤트 대시보드
-/disposition - 기질 분석 보기
-/evolution - 페르소나 진화 추적
-/image - 기본 페르소나 이미지 생성
-/dreamscape - 🌌 데이터 드림스케이프 생성
-/logo - 🎨 나만의 로고 완성
-/limited - 한정판 이미지 생성
-/styles - 사용 가능한 스타일 목록
-/diary - 페르소나 다이어리
-/write - 다이어리 작성
-/read - 다이어리 읽기
-/stats - 다이어리 통계
-/search - 다이어리 검색
-/music - AI 음악 솔루션
-/five-elements - 오행 음악 추천
-/gamma-frequency - 감마파 음악 추천
 
-*💡 사용 팁:*
-• 📹 15초 영상으로 가장 정확한 분석 가능
-• 🤖 분석 후 AI 어드바이저와 상담하여 맞춤 솔루션 받기
-• 📍 위치 정보 공유로 날씨 기반 추천 받기
-• 📖 다이어리로 건강 변화 추적하기
+*핵심 기능:*
+/persona - 현재 페르소나 정보 확인
+/weather - 날씨 기반 건강 조언
+/advice - 개인화된 건강 조언
 
-*🎯 건강 페르소나:*
-• P1: The Visionary Leader (비전 리더)
-• P2: The Balanced Builder (균형 조성가)
-• P3: The Dynamic Explorer (동적 탐험가)
-• P4: The Mindful Guardian (마음챙김 수호자)
+*분석 방법:*
+1. /start로 봇을 시작하세요
+2. /analyze로 분석을 시작하세요
+3. 15초 음성/영상 메시지를 보내세요
+4. 또는 사진을 업로드하세요
+5. 개인화된 건강 조언을 받으세요
 
-*특별 기능:*
-• 🌌 데이터 드림스케이프 (AI 고유 미학)
-• 🎨 페르소나 로고 생성 (개인 브랜딩)
-• 🎭 한정판 이벤트 참여로 특별 페르소나 획득
-• 🧠 5차원 기질 분석 (사고형, 내향형, 주도형, 실용형, 안정형)
-• 🔄 페르소나 진화 추적으로 변화 패턴 분석
-• 🌍 환경 지능 통합 (날씨, 문화, 경제, 정치)
-• 📖 페르소나 다이어리 (개인화된 일기 작성)
+*지원하는 입력:*
+• 음성 메시지: 음성 기반 분석
+• 영상 메시지: 영상 기반 분석
+• 사진 업로드: 얼굴 분석
+• 위치 공유: 지역별 건강 조언
+• 텍스트 메시지: 대화형 분석
 
-*이미지 생성 기능:*
-• 기본 페르소나 이미지 (/image)
-• 데이터 드림스케이프 (/dreamscape) - AI 고유의 미학
-• 페르소나 로고 (/logo) - 개인 브랜딩용
-• 한정판 이벤트 이미지 (/limited)
+💡 *팁:* 정확한 분석을 위해 조용한 환경에서 15초 이상의 음성/영상을 녹음해주세요.
 
-*철학:*
-"내면의 초상을, AI의 시선으로 재창조하다"
+*웹 분석:*
+분석 결과를 더 자세히 보려면 웹 링크를 통해 접속하세요.
 
 궁금한 것이 있으시면 언제든 말씀해주세요! 😊`;
 
