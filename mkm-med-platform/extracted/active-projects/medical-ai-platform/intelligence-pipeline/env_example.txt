@@ -1,0 +1,38 @@
+# MKM Lab 페르소나 NFT 시스템 환경 설정
+# 실제 사용 시 .env 파일로 복사하여 사용하세요
+
+# 블록체인 설정
+BLOCKCHAIN_RPC_URL=https://polygon-rpc.com
+NFT_CONTRACT_ADDRESS=your-nft-contract-address-here
+PRIVATE_KEY=your-private-key-here
+MKM_LAB_WALLET_ADDRESS=your-mkm-lab-wallet-address-here
+
+# JWT 보안
+JWT_SECRET=mkm-lab-nft-secret-key-224# 외부 API 키
+WEATHER_API_KEY=your-openweathermap-api-key-here
+
+# IPFS 설정
+IPFS_GATEWAY=https://ipfs.io/ipfs/
+
+# 데이터베이스 설정
+DATABASE_URL=your-database-url-here
+
+# 보안 설정
+ENCRYPTION_KEY_PATH=.env.encryption_key
+AUDIT_LOG_RETENTION_DAYS=2555# 시스템 설정
+NFT_PRICE=9900ROYALTY_PERCENTAGE=5
+OWNERSHIP_SPLIT_MKM_LAB=50NERSHIP_SPLIT_USER=50
+# 지원하는 페르소나 코드
+SUPPORTED_PERSONAS=A1,A2,A3,C1,C2,C3,R1,R2,R3,V1,V2,V3# 법적 준수 설정
+PRIVACY_NOTICE_VERSION=v10
+DATA_RETENTION_DAYS=2555SENT_REQUIRED=true
+DATA_ANONYMIZATION=true
+AUDIT_LOGGING=true
+
+# 개발 모드
+DEBUG_MODE=false
+SIMULATION_MODE=true
+
+# 로깅 설정
+LOG_LEVEL=INFO
+LOG_FILE=nft_system.log 

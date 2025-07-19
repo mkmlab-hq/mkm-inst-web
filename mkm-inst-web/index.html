@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MKM Lab - Pioneering the Future of Health AI</title>
+    <style>
+        /* --- Google Fonts: Inter --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+
+        /* --- Keyframes for Animated Background --- */
+        @keyframes subtle-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Base Styles & Dark Theme --- */
+        body {
+            background-color: #0A0A0A; /* Deeper Black for contrast */
+            color: #E0E0E0;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            overflow: hidden; /* Prevents scrollbars from the animation */
+        }
+        
+        /* --- Animated Background Element --- */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                -45deg, 
+                #002244, /* Deep Navy */
+                #121212, /* Almost Black */
+                #004080, /* Darker Cyber Blue */
+                #121212
+            );
+            background-size: 400% 400%;
+            animation: subtle-gradient 15s ease infinite;
+            z-index: -1;
+            filter: blur(20px);
+        }
+
+        /* --- Main Content Container --- */
+        .container {
+            max-width: 650px;
+            padding: 50px;
+            border-radius: 12px;
+            background: rgba(18, 18, 18, 0.7); /* Semi-transparent background */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+        }
+
+        /* --- Logo & Headings --- */
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00BFFF; /* Cybernetic Blue */
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        /* --- Mission Statement --- */
+        .mission {
+            font-size: 18px;
+            font-weight: 300;
+            color: #BDBDBD;
+            margin-bottom: 35px;
+        }
+
+        /* --- Key Technologies Section --- */
+        .keywords-title {
+            font-weight: 700;
+            color: #E0E0E0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+        }
+        
+        .keywords {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 35px;
+        }
+
+        .keyword {
+            border: 1px solid #00BFFF;
+            color: #00BFFF;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+        
+        /* --- Status & Contact --- */
+        .status {
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 35px;
+        }
+
+        .contact a {
+            color: #00BFFF;
+            text-decoration: none;
+            font-weight: 700;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .contact a:hover {
+            color: #FFFFFF;
+            border-bottom-color: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">MKM LAB</div>
+        
+        <h1>Molecular Korean Medicine Lab</h1>
+        
+        <p class="mission">Pioneering the Future of Health with Data & AI.</p>
+
+        <p class="keywords-title">Key Technologies</p>
+        <div class="keywords">
+            <span class="keyword">Remote PPG</span>
+            <span class="keyword">Multimodal Biosignal Analysis</span>
+            <span class="keyword">AI Health Persona</span>
+        </div>
+        
+        <p class="status">
+            Our new platform is under construction.<br>
+            We are preparing to launch a new era of personalized health intelligence.
+        </p>
+        
+        <p class="contact">
+            Contact Us: <a href="mailto:contact@no1kmedi.com">contact@no1kmedi.com</a>
+        </p>
+    </div>
+
+</body>
+</html>

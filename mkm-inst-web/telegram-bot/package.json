@@ -1,0 +1,38 @@
+{
+  "name": "persona-diary-bot",
+  "version": "1.0.0",
+  "description": "페르소나 다이어리 텔레그램 봇 - Your Hyper-Personalized AI Health Advisor",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node test-simulation.js",
+    "test:image": "node test-image-generation.js",
+    "test:dreamscape": "node test-dreamscape-features.js",
+    "lint": "node -c src/index.js && node -c src/message-handler.js && node -c src/persona-analyzer.js && node -c src/persona-diary.js && node -c src/persona-diary-api.js && node -c src/persona-rules.js && node -c src/image-generator.js && node -c src/weather-service.js && node -c src/environmental-intelligence.js && node -c src/data-dreamscape-generator.js && node -c src/limited-edition-events.js",
+    "build": "echo 'Build completed'",
+    "deploy": "npm run lint && npm test && npm start"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "health",
+    "ai",
+    "persona"
+  ],
+  "author": "MKM Lab",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.6.1",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'asia-northeast3-docker.pkg.dev/persona-diary-service/mkm-analysis-engine/mkm-analysis-engine:latest'
+    - '.'
+  dir: 'api'
+images:
+- 'asia-northeast3-docker.pkg.dev/persona-diary-service/mkm-analysis-engine/mkm-analysis-engine:latest' 

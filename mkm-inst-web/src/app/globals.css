@@ -1,0 +1,80 @@
+:root {
+  --mkm-primary: #667eea;
+  --mkm-secondary: #764a2
+  --mkm-accent: #f093b;
+  --mkm-dark: #1a1a1;
+  --mkm-light: #f8f9a;
+  --mkm-text: #333333  --mkm-text-light: #666666  
+  --background: #ffffff;
+  --foreground: #171717}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0;
+    --foreground: #ededed;
+    --mkm-text: #ffffff;
+    --mkm-text-light: #cccccc;
+  }
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--mkm-text);
+  background: var(--background);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',Roboto,Oxygen,
+    Ubuntu,Cantarell, Fira Sans,Droid Sans,Helvetica Neue, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height:1.6
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* MKM Lab 그라데이션 효과 */
+.mkm-gradient {
+  background: linear-gradient(135deg, var(--mkm-primary) 0%, var(--mkm-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mkm-gradient-bg {
+  background: linear-gradient(135deg, var(--mkm-primary) 0%, var(--mkm-secondary) 100%);
+}
+
+/* 애니메이션 효과 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 06 ease-out;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14x;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
