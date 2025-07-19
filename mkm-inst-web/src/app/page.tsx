@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './page.module.css';
+import Link from 'next/link';
 
 interface Persona {
   id: string;
@@ -123,7 +124,11 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 테스트용 간단한 렌더링 확인
+  console.log('🎯 Home 컴포넌트가 렌더링되었습니다!');
+
   useEffect(() => {
+    console.log('🎯 Home 컴포넌트가 마운트되었습니다!');
     // 로컬 스토리지에서 이전 결과 불러오기
     const savedResults = localStorage.getItem('meditationResults');
     if (savedResults) {
@@ -485,9 +490,28 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <audio ref={audioRef} />
-      <div className={styles.header}>
-        <h1>MKM Lab - 페르소나 다이어리</h1>
-        <p>당신의 고유한 페르소나와 맞춤형 솔루션</p>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          🧘‍♀️ 페르소나 명상 플랫폼
+        </h1>
+        <p className="text-xl text-gray-600 mb-8">
+          AI 기반 개인화된 명상 경험을 시작하세요
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <Link
+            href="/analysis"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+          >
+            📹 정밀검사 시작
+          </Link>
+          <Link
+            href="/test-camera"
+            className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+          >
+            🔧 카메라 테스트
+          </Link>
+        </div>
       </div>
 
       <div className={styles.content}>
