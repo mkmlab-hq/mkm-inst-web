@@ -5,7 +5,7 @@ const fs = require('fs');
 class PersonaDiaryAPI {
   constructor() {
     // API 서버 URL (환경변수에서 가져오거나 기본값 사용)
-    this.apiBaseUrl = process.env.PERSONA_DIARY_API_URL || 'https://mkm-analysis-engine-xxxxxx-asia-northeast3.run.app';
+    this.apiBaseUrl = process.env.PERSONA_DIARY_API_URL || 'https://mkm-analysis-engine-907685055657.asia-northeast3.run.app';
     this.timeout = 30000; // 30초 타임아웃
     
     console.log(`🔗 페르소나 다이어리 API 연결: ${this.apiBaseUrl}`);
