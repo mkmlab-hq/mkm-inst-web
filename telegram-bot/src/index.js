@@ -10,12 +10,14 @@ const googleAIKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const port = process.env.PORT || 8080;
 const nodeEnv = process.env.NODE_ENV || 'development';
 
-console.log('🚀 페르소나 다이어리 텔레그램 봇 v2.0.0 시작');
+console.log('🚀 MKM Lab AI 페르소나 봇 - 퀀텀 리프 작전 시작!');
 console.log('🔧 환경 변수 확인:');
 console.log(`   PORT: ${port}`);
 console.log(`   NODE_ENV: ${nodeEnv}`);
 console.log(`   TELEGRAM_BOT_TOKEN: ${token ? '✅ 설정됨' : '❌ 설정되지 않음'}`);
 console.log(`   GOOGLE_AI_API_KEY: ${googleAIKey ? '✅ 설정됨' : '❌ 설정되지 않음'}`);
+console.log(`   MKM_ANALYSIS_ENGINE_URL: ${process.env.MKM_ANALYSIS_ENGINE_URL || 'http://localhost:8000'}`);
+console.log(`   MKM_API_KEY: ${process.env.MKM_API_KEY ? '✅ 설정됨' : '❌ 설정되지 않음'}`);
 
 // Google AI API 키 경고
 if (!googleAIKey) {
@@ -202,11 +204,18 @@ bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const data = callbackQuery.data;
 
-    console.log(`🔘 콜백 쿼리 수신: ${data}`);
+    console.log(`🔘 콜백 쿼리 수신: ${data} (채팅 ID: ${chatId})`);
+
+    // 콜백 쿼리 응답 (즉시 응답하여 로딩 상태 해제)
+    await bot.answerCallbackQuery(callbackQuery.id);
 
     switch (data) {
       case 'telegram_analysis':
         await messageHandler.showTelegramAnalysisOptions(chatId);
+        break;
+      
+      case 'generate_card':
+        await messageHandler.generatePersonaCard(chatId);
         break;
       
       case 'music_five_elements':
@@ -217,24 +226,59 @@ bot.on('callback_query', async (callbackQuery) => {
         await messageHandler.generateGammaFrequencyMusic(chatId);
         break;
       
+      case 'web_analysis':
+        await messageHandler.startAnalysis(chatId);
+        break;
+      
+      case 'photo_analysis':
+        await bot.sendMessage(chatId, '📸 얼굴 사진을 업로드해주세요!');
+        break;
+      
+      case 'voice_analysis':
+        await bot.sendMessage(chatId, '🎤 음성 메시지를 보내주세요!');
+        break;
+      
+      case 'text_analysis':
+        await bot.sendMessage(chatId, '💬 건강 관련 메시지를 입력해주세요!');
+        break;
+      
+      case 'weather_advice':
+        await messageHandler.showWeatherOptions(chatId);
+        break;
+      
+      case 'persona_info':
+        await messageHandler.showPersonaInfo(chatId);
+        break;
+      
+      case 'health_advice':
+        await messageHandler.showAdviceOptions(chatId);
+        break;
+      
+      case 'environment_analysis':
+        await messageHandler.showEnvironmentOptions(chatId);
+        break;
+      
       // 원소 기반 능동적 AI 제안 처리
       default:
         if (data.startsWith('proactive_')) {
           await messageHandler.handleProactiveSuggestion(chatId, data);
         } else {
-          await bot.answerCallbackQuery(callbackQuery.id, {
-            text: '알 수 없는 옵션입니다.'
-          });
+          console.log(`⚠️ 처리되지 않은 콜백 데이터: ${data}`);
+          await bot.sendMessage(chatId, 
+            '🔧 해당 기능은 현재 개발 중입니다. 다른 옵션을 선택해주세요!'
+          );
         }
     }
 
-    // 콜백 쿼리 응답
-    await bot.answerCallbackQuery(callbackQuery.id);
   } catch (error) {
     console.error('❌ 콜백 쿼리 처리 에러:', error);
-    await bot.answerCallbackQuery(callbackQuery.id, {
-      text: '오류가 발생했습니다.'
-    });
+    try {
+      await bot.answerCallbackQuery(callbackQuery.id, {
+        text: '오류가 발생했습니다. 다시 시도해주세요.'
+      });
+    } catch (answerError) {
+      console.error('❌ 콜백 응답 전송 실패:', answerError);
+    }
   }
 });
 
