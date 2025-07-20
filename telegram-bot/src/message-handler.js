@@ -110,7 +110,7 @@ class MessageHandler {
     const userState = this.userStates.get(chatId) || {};
     
     await this.bot.sendMessage(chatId, 
-      '📸 사진을 받았습니다! 얼굴 분석을 시작합니다...'
+      '📸 사진을 받았습니다! AI 얼굴 분석을 시작합니다...'
     );
 
     try {
@@ -134,72 +134,122 @@ class MessageHandler {
         return;
       }
 
-      // 사진 분석 시뮬레이션 (실제 얼굴 분석 API 대신)
-      setTimeout(async () => {
-        try {
-          // 얼굴 특징 데이터 시뮬레이션
-          const facialData = {
-            eyes: ['bright', 'deep'][Math.floor(Math.random() * 2)],
-            mouth: ['firm', 'soft'][Math.floor(Math.random() * 2)],
-            forehead: ['high', 'broad'][Math.floor(Math.random() * 2)],
-            jaw: ['strong', 'round'][Math.floor(Math.random() * 2)],
-            overall: ['confident', 'thoughtful'][Math.floor(Math.random() * 2)]
-          };
+      // 실제 얼굴 분석 수행
+      try {
+        console.log('🔍 실제 얼굴 분석 시작...');
+        const facialAnalysis = await this.faceAnalyzer.analyzeFace(photoBuffer);
+        
+        // 페르소나 분류
+        const persona = this.faceAnalyzer.classifyPersona(facialAnalysis);
+        
+        // 기본 건강 조언 생성
+        const advice = this.faceAnalyzer.generateBasicAdvice(persona);
+        
+        // 분석 결과 전송
+        const resultMessage = `🎭 *${persona.name} (${persona.code})*\n\n` +
+          `신뢰도: ${Math.round(persona.confidence * 100)}%\n\n` +
+          `📋 *${advice.title}*\n\n` +
+          advice.advice.map(item => `• ${item}`).join('\n') + '\n\n' +
+          `🔍 *얼굴 분석 결과*\n` +
+          `• 얼굴 형태: ${facialAnalysis.face_shape?.type || '분석 중'}\n` +
+          `• 눈의 특징: ${facialAnalysis.eyes?.characteristics || '분석 중'}\n` +
+          `• 전체적 인상: ${facialAnalysis.overall_impression?.type || '분석 중'}\n` +
+          `• 추정 나이: ${facialAnalysis.estimated_age || '분석 중'}\n` +
+          `• 건강 지표: ${facialAnalysis.health_indicator?.skin_tone || '분석 중'}`;
 
-          // 환경 데이터 준비
-          const envData = userState.environmentalContext ? {
-            weather: userState.environmentalContext.weather?.condition || 'sunny',
-            time: this.getCurrentTimeOfDay(),
-            season: this.getCurrentSeason()
-          } : null;
+        await this.bot.sendMessage(chatId, resultMessage, { parse_mode: 'Markdown' });
+        
+        // 사용자 상태 업데이트
+        userState.currentPersona = persona.code;
+        userState.lastPersonaResult = {
+          persona: persona,
+          facialAnalysis: facialAnalysis,
+          analysisType: 'photo'
+        };
+        userState.lastAnalysis = new Date();
+        userState.lastAnalysisType = 'photo';
+        userState.facialAnalysis = facialAnalysis;
+        this.userStates.set(chatId, userState);
 
-          // 종합 페르소나 분석
-          const result = this.personaAnalyzer.analyzePersona(facialData, null, envData);
-          
-          // 원소 기반 페르소나 생성
-          const elementalPersona = this.getElementalPersona(result.scores);
-          
-          // 새로운 원소 기반 결과 메시지
-          const elementalResult = `🌟 *${elementalPersona.element} ${elementalPersona.name}의 지혜*\n\n${elementalPersona.description}\n\n💫 *${elementalPersona.trait}*\n\n오늘 당신의 신체가 선택한 원소는 ${elementalPersona.element}입니다.`;
-          
-          await this.bot.sendMessage(chatId, elementalResult, { parse_mode: 'Markdown' });
-          
-          // 능동적 AI 동반자 메시지
-          await this.sendProactiveAIAdvice(chatId, elementalPersona);
-          
-          // 지식의 갈증 유발 질문
-          const curiosityQuestion = this.getCuriosityQuestion(elementalPersona);
-          if (curiosityQuestion) {
-            await this.bot.sendMessage(chatId, curiosityQuestion, { parse_mode: 'Markdown' });
-          }
-          
-          // 사용자 상태 업데이트
-          const previousResult = userState.lastPersonaResult;
-          userState.currentPersona = result.persona.code;
-          userState.lastPersonaResult = result;
-          userState.lastAnalysis = new Date();
-          userState.lastAnalysisType = 'photo';
-          userState.facialAnalysis = facialData;
-          this.userStates.set(chatId, userState);
+        // 상담 옵션 제공
+        await this.bot.sendMessage(chatId, 
+          '💬 더 자세한 상담을 원하시면 "상담하기" 또는 "질문하기"라고 말씀해주세요!'
+        );
+        
+      } catch (analysisError) {
+        console.error('❌ 실제 얼굴 분석 실패:', analysisError);
+        
+        // 폴백: 시뮬레이션 분석
+        await this.bot.sendMessage(chatId, 
+          '⚠️ AI 분석에 일시적 문제가 있어 기본 분석을 제공합니다...'
+        );
+        
+        setTimeout(async () => {
+          try {
+            // 얼굴 특징 데이터 시뮬레이션
+            const facialData = {
+              eyes: ['bright', 'deep'][Math.floor(Math.random() * 2)],
+              mouth: ['firm', 'soft'][Math.floor(Math.random() * 2)],
+              forehead: ['high', 'broad'][Math.floor(Math.random() * 2)],
+              jaw: ['strong', 'round'][Math.floor(Math.random() * 2)],
+              overall: ['confident', 'thoughtful'][Math.floor(Math.random() * 2)]
+            };
 
-          // 페르소나 진화 추적
-          if (previousResult) {
-            const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
-            if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
-              await this.bot.sendMessage(chatId, 
-                `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
-                { parse_mode: 'Markdown' }
-              );
+            // 환경 데이터 준비
+            const envData = userState.environmentalContext ? {
+              weather: userState.environmentalContext.weather?.condition || 'sunny',
+              time: this.getCurrentTimeOfDay(),
+              season: this.getCurrentSeason()
+            } : null;
+
+            // 종합 페르소나 분석
+            const result = this.personaAnalyzer.analyzePersona(facialData, null, envData);
+            
+            // 원소 기반 페르소나 생성
+            const elementalPersona = this.getElementalPersona(result.scores);
+            
+            // 새로운 원소 기반 결과 메시지
+            const elementalResult = `🌟 *${elementalPersona.element} ${elementalPersona.name}의 지혜*\n\n${elementalPersona.description}\n\n💫 *${elementalPersona.trait}*\n\n오늘 당신의 신체가 선택한 원소는 ${elementalPersona.element}입니다.`;
+            
+            await this.bot.sendMessage(chatId, elementalResult, { parse_mode: 'Markdown' });
+            
+            // 능동적 AI 동반자 메시지
+            await this.sendProactiveAIAdvice(chatId, elementalPersona);
+            
+            // 지식의 갈증 유발 질문
+            const curiosityQuestion = this.getCuriosityQuestion(elementalPersona);
+            if (curiosityQuestion) {
+              await this.bot.sendMessage(chatId, curiosityQuestion, { parse_mode: 'Markdown' });
             }
-          }
+            
+            // 사용자 상태 업데이트
+            const previousResult = userState.lastPersonaResult;
+            userState.currentPersona = result.persona.code;
+            userState.lastPersonaResult = result;
+            userState.lastAnalysis = new Date();
+            userState.lastAnalysisType = 'photo_fallback';
+            userState.facialAnalysis = facialData;
+            this.userStates.set(chatId, userState);
 
-        } catch (analysisError) {
-          console.error('❌ 사진 분석 처리 오류:', analysisError);
-          await this.bot.sendMessage(chatId, 
-            '😔 사진 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
-          );
-        }
-      }, 2000); // 2초 후 분석 시작
+            // 페르소나 진화 추적
+            if (previousResult) {
+              const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
+              if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
+                await this.bot.sendMessage(chatId, 
+                  `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
+                  { parse_mode: 'Markdown' }
+                );
+              }
+            }
+
+          } catch (fallbackError) {
+            console.error('❌ 폴백 분석도 실패:', fallbackError);
+            await this.bot.sendMessage(chatId, 
+              '😔 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            );
+          }
+        }, 2000);
+      }
       
     } catch (error) {
       console.error('❌ 사진 처리 전체 오류:', error);
