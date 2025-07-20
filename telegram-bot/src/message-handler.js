@@ -157,7 +157,10 @@ class MessageHandler {
           `• 추정 나이: ${facialAnalysis.estimated_age || '분석 중'}\n` +
           `• 건강 지표: ${facialAnalysis.health_indicator?.skin_tone || '분석 중'}`;
 
-        await this.bot.sendMessage(chatId, resultMessage, { parse_mode: 'Markdown' });
+        await this.bot.sendMessage(chatId, resultMessage, { 
+      parse_mode: 'Markdown',
+      disable_notification: false
+    });
         
         // 사용자 상태 업데이트
         userState.currentPersona = persona.code;
@@ -1394,6 +1397,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 
     await this.bot.sendMessage(chatId, welcomeText, { 
       parse_mode: 'Markdown',
+      disable_notification: false,
       ...mainMenuKeyboard
     });
   }
@@ -1432,7 +1436,10 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
 
 궁금한 것이 있으시면 언제든 말씀해주세요! 😊`;
 
-    await this.bot.sendMessage(chatId, helpText, { parse_mode: 'Markdown' });
+    await this.bot.sendMessage(chatId, helpText, { 
+      parse_mode: 'Markdown',
+      disable_notification: false
+    });
   }
 
   async startAnalysis(chatId) {
@@ -2987,13 +2994,16 @@ ${gammaMusic.tips.join('\n')}
         const cardResult = await this.personaCardGenerator.generatePersonaCard(defaultPersona, userPhoto);
         
         if (cardResult.success) {
-          await this.bot.sendMessage(chatId, 
-            '🎭 *당신의 페르소나 카드가 완성되었습니다!*\n\n' +
-            `${cardResult.card.design.name} (${cardResult.card.design.element})\n` +
-            `${cardResult.card.design.trait}\n\n` +
-            '아름다운 시각적 카드를 생성하려면 얼굴 사진을 보내주세요!',
-            { parse_mode: 'Markdown' }
-          );
+                  await this.bot.sendMessage(chatId, 
+          '🎭 *당신의 페르소나 카드가 완성되었습니다!*\n\n' +
+          `${cardResult.card.design.name} (${cardResult.card.design.element})\n` +
+          `${cardResult.card.design.trait}\n\n` +
+          '아름다운 시각적 카드를 생성하려면 얼굴 사진을 보내주세요!',
+          { 
+            parse_mode: 'Markdown',
+            disable_notification: false
+          }
+        );
         } else {
           // 텍스트 카드로 폴백
           const textCardResult = this.personaCardGenerator.generateTextCard(defaultPersona);
