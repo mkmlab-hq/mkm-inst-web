@@ -231,7 +231,20 @@ bot.on('callback_query', async (callbackQuery) => {
         break;
       
       case 'photo_analysis':
-        await bot.sendMessage(chatId, '📸 얼굴 사진을 업로드해주세요!');
+        await bot.sendMessage(chatId, 
+          '📸 *얼굴 사진 분석*\n\n' +
+          '카메라를 사용하여 얼굴 사진을 촬영하거나 갤러리에서 사진을 선택해주세요!\n\n' +
+          '💡 *촬영 팁:*\n' +
+          '• 밝은 곳에서 촬영하세요\n' +
+          '• 얼굴이 잘 보이도록 촬영하세요\n' +
+          '• 안경은 벗고 촬영하세요\n' +
+          '• 정면을 바라보며 촬영하세요\n\n' +
+          '📱 *카메라 접근 방법:*\n' +
+          '• 📷 카메라 아이콘 클릭\n' +
+          '• 📁 갤러리 아이콘 클릭\n' +
+          '• 또는 기존 사진 첨부',
+          { parse_mode: 'Markdown' }
+        );
         break;
       
       case 'voice_analysis':
