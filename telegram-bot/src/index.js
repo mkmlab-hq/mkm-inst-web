@@ -258,6 +258,90 @@ bot.on('callback_query', async (callbackQuery) => {
         await messageHandler.showEnvironmentOptions(chatId);
         break;
       
+      // 페르소나 다이어리 관련
+      case 'diary_write':
+        await messageHandler.startDiaryEntry(chatId);
+        break;
+      
+      case 'diary_read':
+        await messageHandler.showDiaryEntries(chatId);
+        break;
+      
+      case 'diary_stats':
+        await messageHandler.showDiaryStats(chatId);
+        break;
+      
+      case 'diary_search':
+        await messageHandler.startDiarySearch(chatId);
+        break;
+      
+      // AI 음악 솔루션
+      case 'music_options':
+        await messageHandler.showMusicOptions(chatId);
+        break;
+      
+      // 이미지 생성 관련
+      case 'generate_image':
+        await messageHandler.generatePersonaImage(chatId);
+        break;
+      
+      case 'generate_limited':
+        await messageHandler.generateLimitedEditionImage(chatId);
+        break;
+      
+      case 'generate_dreamscape':
+        await messageHandler.generateDreamscapeImage(chatId);
+        break;
+      
+      case 'generate_logo':
+        await messageHandler.generatePersonaLogo(chatId);
+        break;
+      
+      // 스타일 관련
+      case 'show_styles':
+        await messageHandler.showAvailableStyles(chatId);
+        break;
+      
+      // 이벤트 관련
+      case 'limited_events':
+        await messageHandler.showLimitedEditionEvents(chatId);
+        break;
+      
+      case 'event_dashboard':
+        await messageHandler.showEventDashboard(chatId);
+        break;
+      
+      // 분석 관련
+      case 'disposition_analysis':
+        await messageHandler.showDispositionAnalysis(chatId);
+        break;
+      
+      case 'persona_evolution':
+        await messageHandler.showPersonaEvolution(chatId);
+        break;
+      
+      // 상담 관련
+      case 'consult_ignis_창의적 아이디어 발굴하기':
+      case 'consult_terra_업무 계획 세우기':
+      case 'consult_aqua_새로운 환경 적응하기':
+      case 'consult_aether_직관적 의사결정하기':
+        await bot.sendMessage(chatId, '💬 상담 기능은 곧 업데이트될 예정입니다!');
+        break;
+      
+      case 'premium_ignis_창의적 아이디어 발굴하기':
+      case 'premium_terra_업무 계획 세우기':
+      case 'premium_aqua_새로운 환경 적응하기':
+      case 'premium_aether_직관적 의사결정하기':
+        await bot.sendMessage(chatId, '📊 정밀 분석 기능은 곧 업데이트될 예정입니다!');
+        break;
+      
+      case 'action_ignis_창의적 아이디어 발굴하기':
+      case 'action_terra_업무 계획 세우기':
+      case 'action_aqua_새로운 환경 적응하기':
+      case 'action_aether_직관적 의사결정하기':
+        await bot.sendMessage(chatId, '🎯 액션 플랜 기능은 곧 업데이트될 예정입니다!');
+        break;
+      
       // 원소 기반 능동적 AI 제안 처리
       default:
         if (data.startsWith('proactive_')) {
