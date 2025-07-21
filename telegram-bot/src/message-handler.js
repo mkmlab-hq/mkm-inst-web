@@ -311,7 +311,7 @@ class MessageHandler {
     } catch (error) {
       console.error('음성 분석 오류:', error?.response?.data || error.message);
       // 시뮬레이션 메시지
-      await this.bot.sendMessage(chatId, '☕️ *음성 분석 결과 (시뮬레이션)*\n\n오늘의 목소리에서 활기찬 에너지가 느껴집니다!', { parse_mode: 'Markdown' });
+      await this.bot.sendMessage(chatId, '☕️ 음성 분석 결과를 받아오지 못했습니다. 잠시 후 다시 시도해 주세요.', { parse_mode: 'Markdown' });
     }
   }
 
