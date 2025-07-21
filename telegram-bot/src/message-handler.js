@@ -32,32 +32,22 @@ class MessageHandler {
       return;
     }
 
-    // 음성 메시지 처리 (15초 음성 촬영)
-    if (msg.voice || msg.audio) {
+    // 음성 메시지 처리 (3초 이상 아~)
+    if (msg.voice) {
       await this.handleVoiceMessage(msg);
       return;
     }
 
-    // 영상 메시지 처리 (15초 영상 촬영)
-    if (msg.video) {
-      await this.handleVideoMessage(msg);
-      return;
-    }
-
-    // 사진 처리
+    // 사진 파일(이미지)만 얼굴 분석 허용
     if (msg.photo) {
       await this.handlePhoto(msg);
       return;
     }
 
-    // 위치 정보 처리
-    if (msg.location) {
-      await this.handleLocation(msg);
-      return;
-    }
-
-    // 일반 텍스트 메시지 처리
-    await this.handleTextMessage(msg, userState);
+    // 예외 처리: 지원하지 않는 입력(텍스트, 동영상, 문서, 스티커 등)
+    await this.bot.sendMessage(chatId,
+      'AI가 이해할 수 없는 파일 형식이에요.\n\n📸 얼굴 사진을 첨부(클립 아이콘)해 주시거나,\n🎤 마이크 버튼을 눌러 “3초간 아~” 소리를 녹음해 보내주세요.'
+    );
   }
 
   async handleCommand(msg) {
@@ -1237,47 +1227,9 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendWelcomeMessage(chatId) {
-    const welcomeText = `안녕하세요! MKM Lab 페르소나 다이어리 챗봇입니다! 최종 배포 검증 250721-V2\n\n당신만을 위한 초개인화 건강 솔루션을 제공하는 AI 페르소나 분석 봇입니다.\n\n🌟 핵심 가치:\n• 🎯 초개인화 - 당신만의 고유한 건강 페르소나\n• 🔬 과학적 - (향후 rPPG 기술 기반 생체 신호 분석)\n• 🤖 AI 기반 - RAG 기술로 맞춤형 건강 상담\n• 🌍 통합적 - 날씨, 환경, 개인 데이터 융합\n\n🎭 분석 방법:\n• 📸 사진 분석 - 얼굴 사진으로 AI 특징 분석\n• 💬 텍스트 분석 - 건강 관련 메시지로 분석\n\n🤖 AI 어드바이저:\n분석 후 "AI 건강 상담"으로 AI 어드바이저와 상담하여 맞춤 솔루션을 받을 수 있습니다.\n\n💡 시작하기:\n• 📸 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다\n• 💬 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다\n• 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다\n\n지금 바로 당신만의 특별한 건강 여정을 시작해보세요! ✨`;
-
-    // 메인 메뉴 인라인 키보드
-    const mainMenuKeyboard = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '📸 사진으로 분석하기',
-              callback_data: 'photo_analysis'
-            },
-            {
-              text: '🎤 음성으로 분석하기',
-              callback_data: 'voice_analysis'
-            }
-          ],
-          [
-            {
-              text: '💬 텍스트로 분석하기',
-              callback_data: 'text_analysis'
-            },
-            {
-              text: '🎭 페르소나 카드 생성',
-              callback_data: 'generate_card'
-            }
-          ],
-          [
-            {
-              text: '💡 건강 조언 받기',
-              callback_data: 'health_advice'
-            }
-          ]
-        ]
-      }
-    };
-
-    await this.bot.sendMessage(chatId, welcomeText, { 
-      parse_mode: 'Markdown',
-      disable_notification: false,
-      ...mainMenuKeyboard
-    });
+    await this.bot.sendMessage(chatId,
+      '📸 얼굴 사진을 첨부(클립 아이콘)해 주세요.\n(카메라 촬영 대신, 갤러리에서 파일을 선택해 업로드하세요.)\n\n🎤 마이크 버튼을 눌러 “3초간 아~” 소리를 녹음해 보내주세요.\n(3초 이상 녹음 시, AI가 음성 건강을 분석합니다.)'
+    );
   }
 
   async sendHelpMessage(chatId) {
