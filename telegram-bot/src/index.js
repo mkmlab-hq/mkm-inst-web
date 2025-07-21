@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// 환경 변수 자동 검증 코드 (보안상 실제 값은 출력하지 않음)
+const requiredEnv = ['TELEGRAM_BOT_TOKEN', 'GOOGLE_AI_API_KEY', 'MKM_ANALYSIS_ENGINE_URL', 'MKM_API_KEY'];
+requiredEnv.forEach(key => {
+  if (!process.env[key]) {
+    console.error(`❌ 환경 변수 누락 또는 설정 오류: ${key}`);
+  } else {
+    console.log(`✅ 환경 변수 ${key} 확인 완료.`);
+  }
+});
 const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
 const { PersonaAnalyzer } = require('./persona-analyzer');
