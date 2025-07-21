@@ -13,7 +13,7 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'mkm-inst-web'
+      - 'mkm-telegram-bot'
       - '--image'
       - 'gcr.io/$PROJECT_ID/mkm-telegram-bot:$COMMIT_SHA'
       - '--region'
