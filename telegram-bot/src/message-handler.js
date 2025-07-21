@@ -1293,7 +1293,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendWelcomeMessage(chatId) {
-    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!*
+    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!* [배포 테스트 250721-V1]
 
 *Your Hyper-Personalized AI Health Advisor*
 
