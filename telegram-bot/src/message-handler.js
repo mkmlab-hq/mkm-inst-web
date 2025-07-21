@@ -1238,7 +1238,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendWelcomeMessage(chatId) {
-    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!* [배포 테스트 250721-V1]
+    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!* [최종 배포 검증 250721-V2]
 
 *Your Hyper-Personalized AI Health Advisor*
 
@@ -1293,18 +1293,8 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
           ],
           [
             {
-              text: '🌤️ 날씨 기반 조언',
-              callback_data: 'weather_advice'
-            },
-            {
               text: '💡 건강 조언 받기',
               callback_data: 'health_advice'
-            }
-          ],
-          [
-            {
-              text: '🔬 정밀 분석 (웹)',
-              callback_data: 'web_analysis'
             }
           ]
         ]
@@ -1359,52 +1349,8 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async startAnalysis(chatId) {
-    // 웹 분석 링크 생성 (환경 변수에서 가져오거나 기본값 사용)
-    const baseUrl = process.env.WEB_APP_URL || 'https://mkm-inst-web-907685055657.asia-northeast3.run.app';
-    const webAnalysisUrl = `${baseUrl}?user_id=${chatId}`;
-    
-    const analysisText = `🔬 *정밀 페르소나 분석*
-
-*새로운 웹 분석 시스템이 준비되었습니다!*
-
-🌐 **웹에서 실시간 분석하기**
-• 15초 실시간 얼굴 촬영
-• 고정밀 생체 신호 분석 (심박수, 혈압)
-• AI 기반 페르소나 진단
-• 맞춤형 건강 솔루션 제공
-
-📱 **텔레그램에서 간편 분석**
-• 사진, 음성, 텍스트 기반 분석
-• 빠른 결과 확인
-
-*추천: 웹 분석 (가장 정확한 결과)*
-
-어떤 방법으로 분석하시겠습니까?`;
-
-    // 웹 분석 링크 버튼 생성
-    const webAnalysisButton = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '🔬 정밀 분석하기 (웹)',
-              url: webAnalysisUrl
-            }
-          ],
-          [
-            {
-              text: '📱 텔레그램에서 분석',
-              callback_data: 'telegram_analysis'
-            }
-          ]
-        ]
-      }
-    };
-
-    await this.bot.sendMessage(chatId, analysisText, { 
-      parse_mode: 'Markdown',
-      ...webAnalysisButton
-    });
+    // 웹 분석 안내 및 버튼 완전 제거
+    await this.bot.sendMessage(chatId, '정밀 분석 기능은 현재 제공되지 않습니다.');
   }
 
   async showTelegramAnalysisOptions(chatId) {
