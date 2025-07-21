@@ -297,7 +297,17 @@ class MessageHandler {
         timeout: 10000
       });
       const result = backendRes.data?.result || backendRes.data?.message || '분석 결과를 받아오지 못했습니다.';
-      await this.bot.sendMessage(chatId, `☕️ *음성 분석 결과*\n\n${result}`, { parse_mode: 'Markdown' });
+      const spectrumImagePath = backendRes.data?.spectrum_image_path;
+      await this.bot.sendMessage(chatId, `☕️ *음성 분석 결과*\n\n${typeof result === 'string' ? result : JSON.stringify(result, null, 2)}`, { parse_mode: 'Markdown' });
+      if (spectrumImagePath) {
+        try {
+          // 스펙트럼 이미지 다운로드
+          const imageRes = await axios.get(spectrumImagePath, { responseType: 'arraybuffer' });
+          await this.bot.sendPhoto(chatId, imageRes.data, { caption: '🎼 음성 스펙트럼(주파수 분포)' });
+        } catch (imgErr) {
+          console.error('스펙트럼 이미지 다운로드/전송 오류:', imgErr.message);
+        }
+      }
     } catch (error) {
       console.error('음성 분석 오류:', error?.response?.data || error.message);
       // 시뮬레이션 메시지
