@@ -248,7 +248,7 @@ class PersonaRules {
       stable: 50
     };
 
-    const lowerText = text.toLowerCase();
+    const lowerText = (text || '').toLowerCase();
 
     // 키워드 매칭
     Object.keys(this.textAnalysisRules.keywords).forEach(keyword => {
