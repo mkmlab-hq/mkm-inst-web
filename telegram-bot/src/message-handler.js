@@ -274,98 +274,43 @@ class MessageHandler {
     const voiceInfo = msg.voice || msg.audio;
     const duration = voiceInfo.duration || 0;
     if (duration > 3) {
-      await this.bot.sendMessage(chatId, '⚠️ 3초 이내의 짧은 음성 메시지만 분석에 사용됩니다. 다시 시도해 주세요!');
+      await this.bot.sendMessage(chatId, '⚠️ 3초 이내의 짧은 음성 메시지만 분석할 수 있어요!\n다시 한 번, 마이크 버튼을 누르고 3초간 "아~" 소리를 내주세요. ☕️');
       return;
     }
-    await this.bot.sendMessage(chatId, 
-      `🎤 음성 메시지를 받았습니다! (${duration}초)\n음성 기반 페르소나 분석을 시작합니다...`
-    );
+    await this.bot.sendMessage(chatId, `🎤 *음성 분석 시작!*
 
-    // 음성 분석 시뮬레이션 (실제로는 음성 분석 API 호출)
-    setTimeout(async () => {
-      // 음성 특징 데이터 시뮬레이션
-      const voiceData = {
-        pitch: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
-        tempo: ['fast', 'moderate', 'slow'][Math.floor(Math.random() * 3)],
-        clarity: ['clear', 'moderate', 'muffled'][Math.floor(Math.random() * 3)],
-        energy: ['energetic', 'calm', 'dynamic'][Math.floor(Math.random() * 3)],
-        emotion: ['confident', 'thoughtful', 'enthusiastic'][Math.floor(Math.random() * 3)]
-      };
+마이크 버튼을 누르고 3초간 "아~" 소리를 내주세요.
 
-      // 환경 데이터 준비
-      const envData = userState.environmentalContext ? {
-        weather: userState.environmentalContext.weather?.condition || 'sunny',
-        time: this.getCurrentTimeOfDay(),
-        season: this.getCurrentSeason()
-      } : null;
+엔오커피처럼, 짧고 진하게! ☕️`, { parse_mode: 'Markdown' });
 
-      // 종합 페르소나 분석 (음성 데이터 기반)
-      const result = this.personaAnalyzer.analyzePersona(null, voiceData, envData);
-      const formatted = this.personaAnalyzer.formatPersonaResult(result);
-      
-      await this.bot.sendMessage(chatId, formatted.text, { parse_mode: 'Markdown' });
-      
-      // 음성 기반 특별 조언 추가
-      const voiceAdvice = this.getVoiceBasedAdvice(voiceData);
-      if (voiceAdvice) {
-        await this.bot.sendMessage(chatId, 
-          `🎤 *음성 기반 맞춤 조언*\n\n${voiceAdvice}`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-      
-      // 기질별 맞춤 조언 추가
-      const dispositionAdvice = this.personaAnalyzer.getDispositionBasedAdvice(result.scores);
-      if (dispositionAdvice) {
-        await this.bot.sendMessage(chatId, 
-          `💡 *기질별 맞춤 조언*\n\n${dispositionAdvice}`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-      
-      // 사용자 상태 업데이트
-      const previousResult = userState.lastPersonaResult;
-      userState.currentPersona = result.persona.code;
-      userState.lastPersonaResult = result;
-      userState.lastAnalysis = new Date();
-      userState.lastAnalysisType = 'voice';
-      this.userStates.set(chatId, userState);
+    // 음성 파일 다운로드
+    try {
+      const file = await this.bot.getFile(voiceInfo.file_id);
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+      const axios = require('axios');
+      const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+      const audioBuffer = response.data;
 
-      // 페르소나 진화 추적
-      if (previousResult) {
-        const evolution = this.personaAnalyzer.trackPersonaEvolution(chatId, result, previousResult);
-        if (!evolution.isFirstTime && Object.keys(evolution.changes).length > 0) {
-          await this.bot.sendMessage(chatId, 
-            `🔄 *페르소나 진화 감지*\n\n${evolution.summary}`,
-            { parse_mode: 'Markdown' }
-          );
-        }
-      }
-    }, 3000);
-  }
-
-  getVoiceBasedAdvice(voiceData) {
-    const advice = [];
-    
-    if (voiceData.pitch === 'high') {
-      advice.push("• 높은 음성 톤은 활발하고 열정적인 성격을 나타냅니다");
-    } else if (voiceData.pitch === 'low') {
-      advice.push("• 낮은 음성 톤은 신중하고 안정적인 성격을 나타냅니다");
+      // 백엔드로 전송
+      const backendUrl = process.env.MKM_ANALYSIS_ENGINE_URL || 'http://localhost:8000';
+      const apiKey = process.env.MKM_API_KEY || '';
+      const formData = new (require('form-data'))();
+      formData.append('voice', Buffer.from(audioBuffer), { filename: 'voice.ogg' });
+      formData.append('telegram_id', chatId);
+      const backendRes = await axios.post(`${backendUrl}/analyze-voice`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          'x-api-key': apiKey
+        },
+        timeout: 10000
+      });
+      const result = backendRes.data?.result || backendRes.data?.message || '분석 결과를 받아오지 못했습니다.';
+      await this.bot.sendMessage(chatId, `☕️ *음성 분석 결과*\n\n${result}\n\n오늘도 진한 하루 보내세요!`, { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('음성 분석 오류:', error?.response?.data || error.message);
+      // 시뮬레이션 메시지
+      await this.bot.sendMessage(chatId, '☕️ *음성 분석 결과 (시뮬레이션)*\n\n오늘의 목소리에서 활기찬 에너지가 느껴집니다!\n\n엔오커피처럼, 진하게 살아가세요 :)', { parse_mode: 'Markdown' });
     }
-    
-    if (voiceData.tempo === 'fast') {
-      advice.push("• 빠른 말투는 동적이고 적응력 강한 성격을 나타냅니다");
-    } else if (voiceData.tempo === 'slow') {
-      advice.push("• 천천히 말하는 것은 신중하고 깊이 있는 사고를 나타냅니다");
-    }
-    
-    if (voiceData.energy === 'energetic') {
-      advice.push("• 활기찬 음성은 긍정적이고 동기부여가 강한 성격을 나타냅니다");
-    } else if (voiceData.energy === 'calm') {
-      advice.push("• 차분한 음성은 마음챙김과 내면의 평화를 중요시하는 성격을 나타냅니다");
-    }
-    
-    return advice.join('\n');
   }
 
   async handleVideoMessage(msg) {
