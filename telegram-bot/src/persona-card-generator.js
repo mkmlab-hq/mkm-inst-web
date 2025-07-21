@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 class PersonaCardGenerator {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     // 기존 4대 원소 디자인 시스템 활용
     this.elementalDesigns = {

@@ -11,7 +11,7 @@ class ImageGenerator {
   constructor() {
     // Google AI Gemini Pro Vision API 설정
     this.apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     
     // 이미지 스타일 정의 (Google AI 최적화)
     this.styles = {
