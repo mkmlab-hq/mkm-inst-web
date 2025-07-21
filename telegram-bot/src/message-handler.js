@@ -83,7 +83,7 @@ class MessageHandler {
         break;
       
       case '/weather':
-        await this.showWeatherOptions(chatId);
+        // await this.showWeatherOptions(chatId); // [MVP 제외]
         break;
       
       case '/advice':
@@ -110,8 +110,7 @@ class MessageHandler {
     const userState = this.userStates.get(chatId) || {};
     
     await this.bot.sendMessage(chatId, 
-      '📸 사진을 받았습니다! AI 얼굴 분석을 시작합니다...\n\n' +
-      '🔍 분석 중이니 잠시만 기다려주세요...'
+      '📸 사진을 받았습니다! 얼굴 분석을 시작합니다...'
     );
 
     try {
@@ -272,11 +271,12 @@ class MessageHandler {
   async handleVoiceMessage(msg) {
     const chatId = msg.chat.id;
     const userState = this.userStates.get(chatId) || {};
-    
-    // 음성 메시지 정보 확인
     const voiceInfo = msg.voice || msg.audio;
     const duration = voiceInfo.duration || 0;
-    
+    if (duration > 3) {
+      await this.bot.sendMessage(chatId, '⚠️ 3초 이내의 짧은 음성 메시지만 분석에 사용됩니다. 다시 시도해 주세요!');
+      return;
+    }
     await this.bot.sendMessage(chatId, 
       `🎤 음성 메시지를 받았습니다! (${duration}초)\n음성 기반 페르소나 분석을 시작합니다...`
     );
@@ -1258,44 +1258,8 @@ class MessageHandler {
   }
 
   async handleWeatherQuery(chatId, text) {
-    // 도시명 추출 시도
-    const cityMatch = text.match(/(서울|부산|대구|인천|광주|대전|울산|제주|뉴욕|런던|파리|도쿄|베이징|시드니)/);
-    
-    if (cityMatch) {
-      const cityName = cityMatch[1];
-      await this.bot.sendMessage(chatId, 
-        `🌤️ ${cityName}의 날씨 정보를 가져오는 중...`
-      );
-
-      try {
-        const weather = await this.weatherService.getWeatherByCity(cityName);
-        const weatherMessage = this.weatherService.formatWeatherMessage(weather);
-        
-        await this.bot.sendMessage(chatId, weatherMessage, { parse_mode: 'Markdown' });
-
-        // 사용자 상태 업데이트
-        const userState = this.userStates.get(chatId) || {};
-        userState.weather = weather;
-        this.userStates.set(chatId, userState);
-
-        // 페르소나가 있으면 날씨 기반 추천
-        if (userState.currentPersona) {
-          await this.sendWeatherBasedRecommendation(chatId, userState.currentPersona, null, weather);
-        }
-      } catch (error) {
-        console.error('날씨 조회 오류:', error);
-        await this.bot.sendMessage(chatId, 
-          '😔 날씨 정보를 가져오는 중 오류가 발생했습니다. 다시 시도해주세요.'
-        );
-      }
-    } else {
-      await this.bot.sendMessage(chatId, 
-        '🌤️ 날씨 정보를 확인하려면:\n\n' +
-        '1. 📍 위치 정보를 공유해주세요 (📍 버튼 클릭)\n' +
-        '2. 또는 도시명을 포함해서 메시지를 보내주세요\n' +
-        '   예: "서울 날씨 어때?", "뉴욕 날씨 알려줘"'
-      );
-    }
+    // [MVP 제외] 날씨 쿼리 비활성화
+    // ... 기존 코드 전체 주석 처리 ...
   }
 
   async sendWeatherBasedRecommendation(chatId, personaCode, location, weather = null) {
@@ -1568,22 +1532,9 @@ ${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solutio
   }
 
   async showWeatherOptions(chatId) {
-    const weatherText = `🌤️ *날씨 정보 확인*
-
-다음 중 하나를 선택해주세요:
-
-1. 📍 *위치 정보 공유* - 현재 위치의 날씨 정보를 확인합니다
-2. 💬 *도시명 메시지* - 도시명을 포함해서 메시지를 보내주세요
-   예: "서울 날씨 어때?", "뉴욕 날씨 알려줘"
-
-*날씨 기반 추천 기능:*
-• 현재 날씨에 맞는 활동 추천
-• 페르소나별 맞춤 건강 조언
-• 실시간 날씨 정보 제공
-
-위치 정보를 공유하거나 도시명을 알려주세요!`;
-
-    await this.bot.sendMessage(chatId, weatherText, { parse_mode: 'Markdown' });
+    // [MVP 제외] 날씨 기능 비활성화
+    // const weatherText = `🌤️ *날씨 정보 확인* ...`;
+    // await this.bot.sendMessage(chatId, weatherText, { parse_mode: 'Markdown' });
   }
 
   async showPersonaInfo(chatId) {

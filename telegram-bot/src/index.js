@@ -3,6 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
 const { PersonaAnalyzer } = require('./persona-analyzer');
 const { MessageHandler } = require('./message-handler');
+const axios = require('axios');
 
 // 환경 변수 확인
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -232,32 +233,24 @@ bot.on('callback_query', async (callbackQuery) => {
       
       case 'photo_analysis':
         await bot.sendMessage(chatId, 
-          '📸 *얼굴 사진 분석*\n\n' +
-          '카메라를 사용하여 얼굴 사진을 촬영하거나 갤러리에서 사진을 선택해주세요!\n\n' +
-          '💡 *촬영 팁:*\n' +
-          '• 밝은 곳에서 촬영하세요\n' +
-          '• 얼굴이 잘 보이도록 촬영하세요\n' +
-          '• 안경은 벗고 촬영하세요\n' +
-          '• 정면을 바라보며 촬영하세요\n\n' +
-          '📱 *카메라 접근 방법:*\n' +
-          '• 📷 카메라 아이콘 클릭\n' +
-          '• 📁 갤러리 아이콘 클릭\n' +
-          '• 또는 기존 사진 첨부',
+          '📸 *얼굴 사진 분석*\n\n카메라 아이콘(📷)을 눌러 지금 바로 얼굴을 촬영해 주세요!\n\n밝은 곳에서 정면을 바라보고, 안경은 벗고 촬영하면 더 정확한 분석이 가능합니다.',
           { parse_mode: 'Markdown' }
         );
         break;
-      
       case 'voice_analysis':
-        await bot.sendMessage(chatId, '🎤 음성 메시지를 보내주세요!');
+        await bot.sendMessage(chatId, 
+          '🎤 *음성 분석*\n\n마이크 아이콘(🎤)을 누르고 "아~" 소리를 3초간 내주세요!\n\n3초 이내의 짧은 음성 메시지만 분석에 사용됩니다.',
+          { parse_mode: 'Markdown' }
+        );
         break;
       
       case 'text_analysis':
         await bot.sendMessage(chatId, '💬 건강 관련 메시지를 입력해주세요!');
         break;
       
-      case 'weather_advice':
-        await messageHandler.showWeatherOptions(chatId);
-        break;
+      // case 'weather_advice':
+      //   await messageHandler.showWeatherOptions(chatId);
+      //   break;
       
       case 'persona_info':
         await messageHandler.showPersonaInfo(chatId);
@@ -356,6 +349,32 @@ bot.on('callback_query', async (callbackQuery) => {
         break;
       
       // 원소 기반 능동적 AI 제안 처리
+      case 'custom_solution': {
+        // 맞춤 솔루션 기능: 백엔드 연동
+        const analysisUrl = process.env.MKM_ANALYSIS_ENGINE_URL;
+        const apiKey = process.env.MKM_API_KEY;
+        if (!analysisUrl || !apiKey) {
+          await bot.sendMessage(chatId, '❌ 맞춤 솔루션 기능을 사용할 수 없습니다. (백엔드 연동 정보가 누락됨)');
+          break;
+        }
+        try {
+          // 예시: 사용자 ID, 최근 페르소나 결과 등 전달 (실제 구현에 맞게 수정 필요)
+          const payload = {
+            telegram_id: chatId,
+            // 필요한 추가 정보(userState 등)도 여기에 포함 가능
+          };
+          const response = await axios.post(`${analysisUrl}/custom-solution`, payload, {
+            headers: { 'x-api-key': apiKey }
+          });
+          const solution = response.data?.solution || response.data?.message || '✅ 맞춤 솔루션이 도착했습니다!';
+          await bot.sendMessage(chatId, `🎯 맞춤 솔루션\n\n${solution}`);
+        } catch (error) {
+          console.error('❌ 맞춤 솔루션 API 호출 오류:', error?.response?.data || error.message);
+          await bot.sendMessage(chatId, '❌ 맞춤 솔루션을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+        break;
+      }
+      
       default:
         if (data.startsWith('proactive_')) {
           await messageHandler.handleProactiveSuggestion(chatId, data);
