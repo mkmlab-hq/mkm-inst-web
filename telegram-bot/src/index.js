@@ -233,7 +233,7 @@ bot.on('callback_query', async (callbackQuery) => {
       
       case 'photo_analysis':
         await bot.sendMessage(chatId, 
-          '📸 *얼굴 사진 분석*\n\n카메라 아이콘(📷)을 눌러 지금 바로 얼굴을 촬영해 주세요!\n\n밝은 곳에서 정면을 바라보고, 안경은 벗고 촬영하면 더 정확한 분석이 가능합니다.',
+          '📸 *얼굴 사진 분석*\n\n아래 클립 아이콘(📎)을 눌러 갤러리에서 얼굴 사진을 첨부해 주세요!\n\n사진을 첨부하면 AI가 자동으로 페르소나 카드를 생성해드립니다.',
           { parse_mode: 'Markdown' }
         );
         break;
