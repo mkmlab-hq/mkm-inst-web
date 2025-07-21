@@ -2269,11 +2269,8 @@ ${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solutio
       `🔍 *다이어리 검색*\n\n` +
       `검색하고 싶은 키워드를 입력해주세요.\n\n` +
       `💡 *검색 예시*\n` +
-      `
-    } catch (error) {
-      console.error('다이어리 검색 오류:', error);
-      await this.bot.sendMessage(chatId, '❌ 다이어리 검색 중 오류가 발생했습니다.');
-    }
+      `예시: 스트레스, 운동, 식단, 수면, 기분, 목표 등`
+    );
   }
 }
 
