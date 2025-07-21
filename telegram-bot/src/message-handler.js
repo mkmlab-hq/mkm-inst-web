@@ -114,29 +114,25 @@ class MessageHandler {
     );
 
     try {
-      // 사진 정보 확인
-      const photo = msg.photo[msg.photo.length - 1]; // 최고 해상도 사진
-      const fileSize = photo.file_size || 0;
-      
-      console.log(`📸 사진 수신: ${Math.round(fileSize / 1024)}KB`);
-      
-      // 사진 다운로드 시도
-      let photoBuffer = null;
+      const file = await this.bot.getFile(msg.photo[msg.photo.length - 1].file_id);
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+      const axios = require('axios');
+      let photoBuffer;
       try {
-        const file = await this.bot.getFile(photo.file_id);
-        photoBuffer = await this.downloadFile(file.file_path);
-        console.log('✅ 사진 다운로드 성공');
-      } catch (downloadError) {
-        console.error('❌ 사진 다운로드 실패:', downloadError);
-        await this.bot.sendMessage(chatId, 
-          '😔 사진 다운로드 중 오류가 발생했습니다.\n\n' +
-          '📱 *해결 방법:*\n' +
-          '• 텔레그램 앱을 재시작해보세요\n' +
-          '• 카메라 권한을 확인해보세요\n' +
-          '• 다른 사진으로 다시 시도해보세요\n' +
-          '• 인터넷 연결을 확인해보세요',
-          { parse_mode: 'Markdown' }
-        );
+        const response = await axios.get(fileUrl, { responseType: 'arraybuffer', timeout: 30000 });
+        photoBuffer = response.data;
+      } catch (error) {
+        console.error(`❌ 사진 다운로드 중 심각한 오류 발생: ${error.message}`);
+        if (error.response) {
+          console.error(`Status: ${error.response.status}`);
+          console.error(`Headers: ${JSON.stringify(error.response.headers)}`);
+          try { console.error(`Data: ${error.response.data.toString()}`); } catch(e) {}
+        }
+        if (error.code === 'ECONNABORTED') {
+          console.error('Download timed out after 30 seconds.');
+        }
+        console.error(`Stack: ${error.stack}`);
+        await this.bot.sendMessage(chatId, '😔 사진 다운로드 중 오류가 발생했습니다. (상세 로그는 서버에서 확인)');
         return;
       }
 
@@ -261,10 +257,8 @@ class MessageHandler {
       }
       
     } catch (error) {
-      console.error('❌ 사진 처리 전체 오류:', error);
-      await this.bot.sendMessage(chatId, 
-        '😔 사진 처리 중 오류가 발생했습니다. 다시 시도해주세요.'
-      );
+      console.error('사진 분석 처리 중 오류:', error);
+      await this.bot.sendMessage(chatId, '😔 사진 분석 중 오류가 발생했습니다.');
     }
   }
 
@@ -840,8 +834,7 @@ class MessageHandler {
     message += `*분석 방법을 선택해주세요:*\n\n`;
     message += `1. 📸 **얼굴 사진 분석** (가장 정확)\n`;
     message += `2. 💓 **생체 정보 입력** (혈압, 맥박 등)\n`;
-    message += `3. 💬 **메시지 기반 분석** (현재 진행 중)\n`;
-    message += `4. 📍 **위치 기반 분석** (날씨 연동)\n\n`;
+    message += `3. 💬 **메시지 기반 분석** (현재 진행 중)\n\n`;
     message += `현재 메시지 기반 분석을 진행하고 있습니다...`;
     
     const followUp = 'ANALYSIS_IN_PROGRESS';
@@ -849,8 +842,7 @@ class MessageHandler {
     const keyboard = {
       inline_keyboard: [
         [{ text: '📸 사진으로 분석', callback_data: 'photo_analysis' }],
-        [{ text: '💓 생체 정보 입력', callback_data: 'vital_signs' }],
-        [{ text: '📍 위치 공유하기', callback_data: 'share_location' }]
+        [{ text: '💓 생체 정보 입력', callback_data: 'vital_signs' }]
       ]
     };
 
@@ -904,8 +896,7 @@ class MessageHandler {
     const keyboard = {
       inline_keyboard: [
         [{ text: '🔬 페르소나 분석', callback_data: 'persona_analysis' }],
-        [{ text: '💡 건강 조언', callback_data: 'health_advice' }],
-        [{ text: '🌤️ 날씨 확인', callback_data: 'weather_check' }]
+        [{ text: '💡 건강 조언', callback_data: 'health_advice' }]
       ]
     };
 
@@ -1238,34 +1229,7 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async sendWelcomeMessage(chatId) {
-    const welcomeText = `🎉 *페르소나 다이어리에 오신 것을 환영합니다!* [최종 배포 검증 250721-V2]
-
-*Your Hyper-Personalized AI Health Advisor*
-
-당신만을 위한 **초개인화 건강 솔루션**을 제공하는 AI 페르소나 분석 봇입니다.
-
-*🌟 핵심 가치:*
-• 🎯 **초개인화** - 당신만의 고유한 건강 페르소나
-• 🔬 **과학적** - rPPG 기술 기반 생체 신호 분석
-• 🤖 **AI 기반** - RAG 기술로 맞춤형 건강 상담
-• 🌍 **통합적** - 날씨, 환경, 개인 데이터 융합
-
-*🎭 분석 방법:*
-• 📹 **영상 분석** (추천) - 15초 영상으로 rPPG 생체 신호 분석
-• 📸 **사진 분석** - 얼굴 사진으로 AI 특징 분석
-• 🎤 **음성 분석** - 음성 메시지로 패턴 분석
-• 💬 **텍스트 분석** - 건강 관련 메시지로 분석
-
-*🤖 AI 어드바이저:*
-분석 후 "상담하기", "질문하기" 등으로 AI 어드바이저와 상담하여 맞춤 솔루션을 받을 수 있습니다.
-
-*💡 시작하기:*
-• 📹 15초 영상을 보내면 가장 정확한 분석을 받을 수 있습니다
-• 📸 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다
-• 💬 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다
-• 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다
-
-지금 바로 당신만의 특별한 건강 여정을 시작해보세요! ✨`;
+    const welcomeText = `안녕하세요! MKM Lab 페르소나 다이어리 챗봇입니다! 최종 배포 검증 250721-V2\n\n당신만을 위한 초개인화 건강 솔루션을 제공하는 AI 페르소나 분석 봇입니다.\n\n🌟 핵심 가치:\n• 🎯 초개인화 - 당신만의 고유한 건강 페르소나\n• 🔬 과학적 - (향후 rPPG 기술 기반 생체 신호 분석)\n• 🤖 AI 기반 - RAG 기술로 맞춤형 건강 상담\n• 🌍 통합적 - 날씨, 환경, 개인 데이터 융합\n\n🎭 분석 방법:\n• 📸 사진 분석 - 얼굴 사진으로 AI 특징 분석\n• 💬 텍스트 분석 - 건강 관련 메시지로 분석\n\n🤖 AI 어드바이저:\n분석 후 "AI 건강 상담"으로 AI 어드바이저와 상담하여 맞춤 솔루션을 받을 수 있습니다.\n\n💡 시작하기:\n• 📸 얼굴 사진을 보내면 AI가 분석하여 맞춤 솔루션을 제공합니다\n• 💬 건강 관련 메시지를 보내면 텍스트 기반 분석을 합니다\n• 📍 위치 정보를 공유하면 날씨 기반 추천을 받을 수 있습니다\n\n지금 바로 당신만의 특별한 건강 여정을 시작해보세요! ✨`;
 
     // 메인 메뉴 인라인 키보드
     const mainMenuKeyboard = {
@@ -1349,7 +1313,6 @@ ${activities.map(activity => `• ${activity}`).join('\n')}
   }
 
   async startAnalysis(chatId) {
-    // 웹 분석 안내 및 버튼 완전 제거
     await this.bot.sendMessage(chatId, '정밀 분석 기능은 현재 제공되지 않습니다.');
   }
 
