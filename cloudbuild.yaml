@@ -1,7 +1,7 @@
 steps:
   # 1. Docker 컨테이너 이미지 빌드
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}', '.']
+    args: ['build', '-t', 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}', 'telegram-bot']
 
   # 2. 빌드된 이미지를 Artifact Registry에 푸시
   - name: 'gcr.io/cloud-builders/docker'

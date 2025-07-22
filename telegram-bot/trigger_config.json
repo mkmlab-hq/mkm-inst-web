@@ -1,0 +1,15 @@
+{
+  "createTime": "2025-07-22T16:04:54.132062729Z",
+  "filename": "/telegram-bot/",
+  "github": {
+    "name": "mkm-inst-web",
+    "owner": "mkmlab-hq",
+    "push": {
+      "branch": "^main$"
+    }
+  },
+  "id": "b139d6a9-e982-49bd-9471-5fce381e6b9c",
+  "name": "mkm-inst-web-main-deploy",
+  "resourceName": "projects/persona-diary-service/locations/global/triggers/b139d6a9-e982-49bd-9471-5fce381e6b9c",
+  "serviceAccount": "projects/persona-diary-service/serviceAccounts/907685055657-compute@developer.gserviceaccount.com"
+}
