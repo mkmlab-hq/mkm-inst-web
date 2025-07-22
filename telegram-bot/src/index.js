@@ -2,7 +2,7 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
 const { PersonaAnalyzer } = require('./persona-analyzer');
-const MessageHandler = require('./message-handler');
+const { MessageHandler } = require('./message-handler');
 const axios = require('axios');
 
 // 환경 변수 확인
