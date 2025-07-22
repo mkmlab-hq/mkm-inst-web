@@ -153,7 +153,7 @@ class MessageHandler {
       const formData = new (require('form-data'))();
       formData.append('audio', Buffer.from(audioBuffer), { filename: 'voice.ogg' });
       formData.append('telegram_id', chatId);
-      const backendRes = await axios.post(`${backendUrl}/analyze-voice`, formData, {
+      const backendRes = await axios.post(`${backendUrl}/analyze-voice/`, formData, {
         headers: {
           ...formData.getHeaders(),
           'x-api-key': apiKey
