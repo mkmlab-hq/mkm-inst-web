@@ -151,7 +151,7 @@ class MessageHandler {
       const backendUrl = process.env.MKM_ANALYSIS_ENGINE_URL || 'http://localhost:8000';
       const apiKey = process.env.MKM_API_KEY || '';
       const formData = new (require('form-data'))();
-      formData.append('voice', Buffer.from(audioBuffer), { filename: 'voice.ogg' });
+      formData.append('audio', Buffer.from(audioBuffer), { filename: 'voice.ogg' });
       formData.append('telegram_id', chatId);
       const backendRes = await axios.post(`${backendUrl}/analyze-voice`, formData, {
         headers: {
