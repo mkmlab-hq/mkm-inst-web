@@ -2100,4 +2100,4 @@ ${result.persona_analysis.solutions.daily_routine.map(solution => `• ${solutio
   }
 }
 
-module.exports = MessageHandler;
+module.exports = { MessageHandler };
