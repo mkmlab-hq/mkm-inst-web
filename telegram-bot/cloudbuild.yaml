@@ -1,38 +1,27 @@
 steps:
-  # Docker 이미지 빌드
+  # 1. Docker 컨테이너 이미지 빌드
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/mkm-telegram-bot:$COMMIT_SHA', '.']
-  
-  # Artifact Registry에 이미지 푸시
+    args: ['build', '-t', 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}', '.']
+
+  # 2. 빌드된 이미지를 Artifact Registry에 푸시
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/mkm-telegram-bot:$COMMIT_SHA']
-  
-  # Cloud Run에 배포
+    args: ['push', 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}']
+
+  # 3. Cloud Run에 새 이미지 배포
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - 'mkm-telegram-bot'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/mkm-telegram-bot:$COMMIT_SHA'
-      - '--region'
-      - 'asia-northeast3'
-      - '--platform'
-      - 'managed'
+      - '${_SERVICE_NAME}'
+      - '--image=asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '--region=asia-northeast3'
+      - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
-      - '--memory'
-      - '512Mi'
-      - '--cpu'
-      - '1'
-      - '--max-instances'
-      - '10'
-
-# 이미지 저장소 설정
 images:
-  - 'gcr.io/$PROJECT_ID/mkm-telegram-bot:$COMMIT_SHA'
+  - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+substitutions:
+  _SERVICE_NAME: mkm-telegram-bot
 
 # 타임아웃 설정
 timeout: '1200s' 
