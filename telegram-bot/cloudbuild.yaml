@@ -22,6 +22,8 @@ images:
   - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
 substitutions:
   _SERVICE_NAME: mkm-telegram-bot
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 # 타임아웃 설정
 timeout: '1200s' 
