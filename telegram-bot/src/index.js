@@ -5,6 +5,37 @@ const { PersonaAnalyzer } = require('./persona-analyzer');
 const { MessageHandler } = require('./message-handler');
 const axios = require('axios');
 
+// i18n-node 다국어 지원 추가
+const i18n = require('i18n');
+i18n.configure({
+  locales: ['ko', 'en'],
+  directory: __dirname + '/../../locales',
+  defaultLocale: 'en', // 기본 언어를 영어로 설정
+  objectNotation: true
+});
+
+// 언어 감지 함수
+function detectLang(msg) {
+  // ko만 한국어, 그 외(감지 실패 포함)는 모두 영어
+  return (msg.from && msg.from.language_code && msg.from.language_code === 'ko') ? 'ko' : 'en';
+}
+
+// 메시지 전송 래퍼
+function sendI18nMessage(chatId, msg, key, params, opts = {}) {
+  i18n.setLocale(detectLang(msg));
+  return bot.sendMessage(chatId, i18n.__(key, params), opts);
+}
+
+// 메인 버튼 다국어화
+function getMainButtons(lang) {
+  i18n.setLocale(lang);
+  return [
+    [{ text: i18n.__('menu.tongue'), callback_data: 'start_tongue_analysis' }],
+    [{ text: i18n.__('menu.voice'), callback_data: 'start_voice_analysis' }],
+    [{ text: i18n.__('menu.persona_chat'), callback_data: 'start_persona_chat' }]
+  ];
+}
+
 // 환경 변수 확인
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const googleAIKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
@@ -199,14 +230,143 @@ bot.on('message', async (msg) => {
   }
 });
 
-// 콜백 쿼리 핸들링 (인라인 버튼 클릭)
+// RAG 어드바이저(헌법/백서/윤리 질의) 버튼 추가
+const RAG_BUTTON = [{ text: 'MKM Lab 원칙/백서/윤리 질의', callback_data: 'ask_constitution' }];
+
+// 온보딩 메시지 및 메인 버튼
+const MAIN_BUTTONS = [
+  [{ text: '👅 AI 혀 통찰(설진 검사)', callback_data: 'start_tongue_analysis' }],
+  [{ text: '🎤 AI 음성 역학 분석(음성 검사)', callback_data: 'start_voice_analysis' }],
+  [{ text: '💬 나의 페르소나와 대화하기', callback_data: 'start_persona_chat' }]
+];
+
+bot.onText(/\/start/, (msg) => {
+  const lang = detectLang(msg);
+  bot.sendMessage(msg.chat.id, i18n.__({ phrase: 'onboarding', locale: lang }), {
+    reply_markup: {
+      inline_keyboard: getMainButtons(lang)
+    }
+  });
+});
+
+// 설진 검사 시작
 bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  if (data === 'start_tongue_analysis') {
+    userStep[chatId] = { step: 'tongue', tongue: null, voice: null };
+    await bot.sendMessage(chatId, `[AI 혀 통찰(설진 검사)]\nAI가 수천 년의 지혜와 최첨단 기술을 융합하여, 당신의 혀에 담긴 미세한 패턴을 통찰합니다.\n지금 바로 혀 사진을 첨부해 주세요. (예시 이미지 첨부)`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '사진 첨부하기', callback_data: 'attach_tongue' }],
+          [{ text: '👉 건너뛰기', callback_data: 'skip_tongue' }]
+        ]
+      }
+    });
+    return;
+  }
+
+  if (data === 'start_voice_analysis') {
+    userStep[chatId] = { step: 'voice', tongue: null, voice: null };
+    await bot.sendMessage(chatId, `[AI 음성 역학 분석(음성 검사)]\nAI가 당신의 목소리에서 에너지 흐름과 심리적 역동성을 분석합니다.\n마이크 아이콘을 누른 후, 5초간 자유롭게 이야기하거나 '아~' 소리를 내어 녹음해 주세요.`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '🎤 녹음 시작', callback_data: 'attach_voice' }],
+          [{ text: '👉 건너뛰기', callback_data: 'skip_voice' }]
+        ]
+      }
+    });
+    return;
+  }
+
+  // 기존 페르소나 카드/대화 흐름 등은 그대로 유지
+  if (data === 'start_persona_card') {
+    // 카드 생성 횟수 제한 체크 (백엔드 연동)
+    try {
+      const res = await axios.post(process.env.MKM_ANALYSIS_ENGINE_URL + '/card/check-limit', { telegram_id: chatId });
+      if (res.data && res.data.allowed === false) {
+        await bot.sendMessage(chatId, `오늘은 [아침/점심/저녁] 페르소나 카드를 모두 받으셨군요!\n당신의 페르소나는 잠시 휴식 중입니다. 내일 새로운 모습으로 다시 찾아올게요!✨`);
+        return;
+      } else if (res.data && typeof res.data.remaining === 'number') {
+        await bot.sendMessage(chatId, `오늘 ${res.data.remaining}장의 카드를 더 받을 수 있습니다.`);
+      }
+    } catch (err) {
+      await bot.sendMessage(chatId, '카드 생성 가능 여부 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    userStep[chatId] = { step: 1, tongue: null, voice: null };
+    await bot.sendMessage(chatId, `[STEP 1/2] AI 혀 통찰: 당신의 혀는 몸과 마음의 거울!\nAI가 수천 년의 지혜와 최첨단 기술을 융합하여, 당신의 혀에 담긴 미세한 패턴을 통찰합니다.\n지금 바로 혀 사진을 첨부해 주세요. (예시 이미지 첨부)`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '사진 첨부하기', callback_data: 'attach_tongue' }],
+          [{ text: '👉 건너뛰기', callback_data: 'skip_tongue' }]
+        ]
+      }
+    });
+    return;
+  }
+
+  if (data === 'start_persona_chat') {
+    // 페르소나 카드 유무 확인 및 대화 진입
+    try {
+      const res = await axios.post(process.env.MKM_ANALYSIS_ENGINE_URL + '/card/get-latest', { telegram_id: chatId });
+      if (!res.data || !res.data.persona_card) {
+        await bot.sendMessage(chatId, '아직 페르소나 카드가 없습니다. 먼저 "내 안의 페르소나 발견하기"를 진행해 주세요!');
+        return;
+      }
+      const personaName = res.data.persona_card.name || '당신의 페르소나';
+      const thumbnailUrl = res.data.persona_card.thumbnail_url;
+      if (thumbnailUrl) {
+        await bot.sendPhoto(chatId, thumbnailUrl);
+      }
+      await bot.sendMessage(chatId, `${personaName}입니다. 당신의 내면 깊은 곳에서 깨어난 진짜 페르소나, 바로 저입니다.\n당신의 오늘과 내일을 저와 함께 탐험해 볼까요? 무엇이 궁금하신가요?`);
+      // 이후 답변마다 썸네일+페르소나명+어조 유지
+    } catch (err) {
+      await bot.sendMessage(chatId, '페르소나 카드 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+    return;
+  }
+
+  if (data === 'attach_tongue') {
+    await bot.sendMessage(chatId, '갤러리에서 혀 사진을 첨부해 주세요!');
+    userStep[chatId].waitingTongue = true;
+    return;
+  }
+
+  if (data === 'skip_tongue') {
+    userStep[chatId].tongue = null;
+    userStep[chatId].step = 2;
+    await bot.sendMessage(chatId, `[STEP 2/2] AI 음성 역학 분석: 목소리에 담긴 에너지와 감정!\nAI가 당신의 목소리에서 에너지 흐름과 심리적 역동성을 분석합니다.\n마이크 아이콘을 누른 후, 5초간 자유롭게 이야기하거나 '아~' 소리를 내어 녹음해 주세요.`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '🎤 녹음 시작', callback_data: 'attach_voice' }],
+          [{ text: '👉 건너뛰기', callback_data: 'skip_voice' }]
+        ]
+      }
+    });
+    await bot.sendMessage(chatId, `선택하지 않아도 괜찮아요. 당신의 페르소나 여정은 계속됩니다.`);
+    return;
+  }
+
+  if (data === 'attach_voice') {
+    await bot.sendMessage(chatId, '마이크 아이콘을 눌러 음성 메시지를 녹음해 주세요!');
+    userStep[chatId].waitingVoice = true;
+    return;
+  }
+
+  if (data === 'skip_voice') {
+    userStep[chatId].voice = null;
+    if (!userStep[chatId].tongue && !userStep[chatId].voice) {
+      await bot.sendMessage(chatId, `두 가지 측정을 모두 건너뛰셨군요!\nAI가 당신의 기존 데이터와 통찰을 바탕으로, 여정은 계속됩니다. 더 정확한 카드를 위해 다음번에 참여해 주세요!`);
+    } else {
+      await bot.sendMessage(chatId, `훌륭해요! 당신의 데이터를 모두 취합했습니다.\n이제 세상에 단 하나뿐인 당신의 건강 페르소나 카드를 만들 시간입니다.`);
+    }
+    delete userStep[chatId];
+    return;
+  }
+
   try {
-    const chatId = callbackQuery.message.chat.id;
-    const data = callbackQuery.data;
-
-    console.log(`🔘 콜백 쿼리 수신: ${data} (채팅 ID: ${chatId})`);
-
     // 콜백 쿼리 응답 (즉시 응답하여 로딩 상태 해제)
     await bot.answerCallbackQuery(callbackQuery.id);
 
@@ -397,6 +557,31 @@ bot.on('callback_query', async (callbackQuery) => {
     }
   }
 });
+
+// 측정 흐름 상태 관리
+const userStep = {};
+
+// 사진/음성 메시지 처리도 step에 따라 분기
+bot.on('photo', async (msg) => {
+  const chatId = msg.chat.id;
+  if (userStep[chatId] && userStep[chatId].step === 'tongue') {
+    userStep[chatId].tongue = msg.photo;
+    await bot.sendMessage(chatId, `혀 사진이 성공적으로 업로드되었습니다!\n이제 AI가 분석을 시작합니다. 결과는 곧 안내해 드릴게요.`);
+    // 설진 분석 결과 처리 로직 연결 필요
+    // await triggerPersonaCardCreation(chatId, userStep[chatId]);
+    delete userStep[chatId];
+  }
+});
+bot.on('voice', async (msg) => {
+  const chatId = msg.chat.id;
+  if (userStep[chatId] && userStep[chatId].step === 'voice') {
+    userStep[chatId].voice = msg.voice;
+    await bot.sendMessage(chatId, `음성 메시지가 성공적으로 업로드되었습니다!\n이제 AI가 분석을 시작합니다. 결과는 곧 안내해 드릴게요.`);
+    // 음성 분석 결과 처리 로직 연결 필요
+    // await triggerPersonaCardCreation(chatId, userStep[chatId]);
+    delete userStep[chatId];
+  }
+}); 
 
 // 프로세스 종료 처리
 process.on('SIGINT', () => {

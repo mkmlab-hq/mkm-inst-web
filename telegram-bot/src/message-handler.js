@@ -105,7 +105,8 @@ class MessageHandler {
     const newsUrl = 'https://news.example.com/hiit';
     // 2. Python 백엔드 API 호출
     try {
-      const response = await axios.post('http://YOUR_BACKEND_URL/generate-persona-package', {
+      const backendUrl = process.env.MKM_ANALYSIS_ENGINE_URL || 'http://localhost:8000';
+      const response = await axios.post(`${backendUrl}/generate-persona-package`, {
         persona_type: personaType,
         user_name: userName,
         news_title: newsTitle,

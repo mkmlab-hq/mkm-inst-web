@@ -1,0 +1,13 @@
+{
+  "onboarding": "✨ Discover your hidden health persona now!\n\nPlease select the test you want from the menu below.\nEach test analyzes your tongue (diagnosis) or voice (analysis) with AI,\nand is used to create your one and only persona card.",
+  "menu": {
+    "tongue": "👅 AI Tongue Insight (Tongue Diagnosis)",
+    "voice": "🎤 AI Voice Dynamics Analysis (Voice Test)",
+    "persona_chat": "💬 Talk to My Persona"
+  },
+  "tongue.prompt": "[AI Tongue Insight (Tongue Diagnosis)]\nAI fuses ancient wisdom and cutting-edge technology to analyze subtle patterns in your tongue.\nPlease attach a photo of your tongue now. (Sample image attached)",
+  "voice.prompt": "[AI Voice Dynamics Analysis (Voice Test)]\nAI analyzes the energy flow and psychological dynamics in your voice.\nPress the microphone icon and record yourself speaking freely for 5 seconds or saying 'Ah~'.",
+  "tongue.uploaded": "Your tongue photo has been uploaded successfully!\nAI will now start the analysis. The result will be sent to you soon.",
+  "voice.uploaded": "Your voice message has been uploaded successfully!\nAI will now start the analysis. The result will be sent to you soon.",
+  "persona.welcome": "This is {personaName}, your true persona awakened from deep within.\nShall we explore your today and tomorrow together? What would you like to ask?"
+} 

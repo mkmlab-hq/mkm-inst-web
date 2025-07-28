@@ -47,8 +47,21 @@ PORT=8080
 ### 설치 및 실행
 
 ```bash
+cd mkm-inst-web/telegram-bot
 npm install
 npm start
+```
+
+### PowerShell에서 실행 예시
+
+```powershell
+cd mkm-inst-web/telegram-bot
+npm install
+npm start
+```
+또는 한 줄로:
+```powershell
+cd mkm-inst-web/telegram-bot; npm install; npm start
 ```
 
 ### 개발 모드
