@@ -1,0 +1,51 @@
+name: Telegram Bot Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'telegram-bot/**'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: telegram-bot/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./telegram-bot
+      run: npm ci
+      
+    - name: Run tests
+      working-directory: ./telegram-bot
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+        MKM_ANALYSIS_ENGINE_URL: ${{ secrets.MKM_ANALYSIS_ENGINE_URL }}
+        MKM_API_KEY: ${{ secrets.MKM_API_KEY }}
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      run: npm test
+      
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: mkm-inst-web
+        region: asia-northeast3
+        image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/mkm-inst-web:${{ github.sha }}
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+        MKM_ANALYSIS_ENGINE_URL: ${{ secrets.MKM_ANALYSIS_ENGINE_URL }}
+        MKM_API_KEY: ${{ secrets.MKM_API_KEY }}
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        NODE_ENV: production 
