@@ -131,6 +131,101 @@
             color: #FFFFFF;
             border-bottom-color: #FFFFFF;
         }
+
+        /* --- Service Buttons --- */
+        .services {
+            margin: 40px 0;
+        }
+
+        .services-title {
+            font-weight: 700;
+            color: #E0E0E0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .service-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .service-btn {
+            background: linear-gradient(135deg, #00BFFF, #0080FF);
+            color: #FFFFFF;
+            padding: 25px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 191, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+            min-width: 280px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .service-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .service-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 191, 255, 0.6);
+            color: #FFFFFF;
+        }
+
+        .service-btn:hover::before {
+            left: 100%;
+        }
+
+        .service-btn.persona {
+            background: linear-gradient(135deg, #FF6B6B, #FF4757);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .service-btn.persona:hover {
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+        }
+
+        .service-btn.chart {
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+        }
+
+        .service-btn.chart:hover {
+            box-shadow: 0 12px 35px rgba(78, 205, 196, 0.6);
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .service-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .service-btn {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -149,13 +244,25 @@
             <span class="keyword">AI Health Persona</span>
         </div>
         
+        <div class="services">
+            <p class="services-title">Our Services</p>
+            <div class="service-buttons">
+                <a href="/persona-diary" class="service-btn persona">
+                    🎭 Persona Diary
+                </a>
+                <a href="/chart-assistant" class="service-btn chart">
+                    📊 AI Chart Assistant
+                </a>
+            </div>
+        </div>
+        
         <p class="status">
             Our new platform is under construction.<br>
             We are preparing to launch a new era of personalized health intelligence.
         </p>
         
         <p class="contact">
-            Contact Us: <a href="mailto:contact@no1kmedi.com">contact@no1kmedi.com</a>
+            Contact Us: <a href="mailto:moksorinw@no1kmedi.com">moksorinw@no1kmedi.com</a>
         </p>
     </div>
 
